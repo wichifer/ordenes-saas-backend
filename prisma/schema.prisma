@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model auth_providers {
+  id_provider  BigInt         @id @default(autoincrement())
+  nombre       String         @db.VarChar(50)
+  codigo       String         @unique @db.VarChar(50)
+  usuario_auth usuario_auth[]
+}
+
+model clientes {
+  id_cliente     BigInt           @id @default(autoincrement())
+  id_empresa     BigInt
+  nombre         String           @db.VarChar(100)
+  apellido       String?          @db.VarChar(100)
+  razon_social   String?          @db.VarChar(150)
+  documento      String?          @db.VarChar(30)
+  cuit           String?          @db.VarChar(20)
+  telefono       String?          @db.VarChar(50)
+  email          String?          @db.VarChar(150)
+  direccion      String?
+  estado         Boolean?         @default(true)
+  created_at     DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamp(6)
+  deleted_at     DateTime?        @db.Timestamp(6)
+  empresas       empresas         @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_empresa")
+  ordenes_compra ordenes_compra[]
+
+  @@index([id_empresa], map: "idx_cliente_empresa")
+}
+
+model empresas {
+  id_empresa        BigInt              @id @default(autoincrement())
+  razon_social      String              @db.VarChar(150)
+  nombre_comercial  String?             @db.VarChar(150)
+  cuit              String?             @db.VarChar(20)
+  email             String?             @db.VarChar(150)
+  telefono          String?             @db.VarChar(50)
+  direccion         String?
+  estado            Boolean?            @default(true)
+  plan_saas         String?             @default("TRIAL") @db.VarChar(50)
+  created_at        DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
+  deleted_at        DateTime?           @db.Timestamp(6)
+  articulos         articulos[]
+  auditoria_logs    auditoria_logs[]
+  clientes          clientes[]
+  ordenes_compra    ordenes_compra[]
+  stock_movimientos stock_movimientos[]
+  suscripciones     suscripciones[]
+  usuarios          usuarios[]
+}
+
+model roles {
+  id_rol      BigInt     @id @default(autoincrement())
+  nombre      String     @unique @db.VarChar(50)
+  descripcion String?
+  created_at  DateTime?  @default(now()) @db.Timestamp(6)
+  usuarios    usuarios[]
+}
+
+model usuario_auth {
+  id_usuario_auth  BigInt         @id @default(autoincrement())
+  id_usuario       BigInt
+  id_provider      BigInt
+  provider_user_id String         @db.VarChar(255)
+  created_at       DateTime?      @default(now()) @db.Timestamp(6)
+  auth_providers   auth_providers @relation(fields: [id_provider], references: [id_provider], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_auth_provider")
+  usuarios         usuarios       @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_auth_usuario")
+}
+
+model usuarios {
+  id_usuario       BigInt           @id @default(autoincrement())
+  id_empresa       BigInt
+  id_rol           BigInt
+  nombre           String           @db.VarChar(100)
+  apellido         String?          @db.VarChar(100)
+  email            String           @unique @db.VarChar(150)
+  password_hash    String?          @db.VarChar(255)
+  avatar_url       String?
+  estado           Boolean?         @default(true)
+  email_verificado Boolean?         @default(false)
+  ultimo_acceso    DateTime?        @db.Timestamp(6)
+  created_at       DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?        @default(now()) @db.Timestamp(6)
+  deleted_at       DateTime?        @db.Timestamp(6)
+  proveedor_auth   String?          @db.VarChar(50)
+  proveedor_id     String?          @db.VarChar(255)
+  auditoria_logs   auditoria_logs[]
+  ordenes_compra   ordenes_compra[]
+  usuario_auth     usuario_auth[]
+  empresas         empresas         @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_empresa")
+  roles            roles            @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
+
+  @@index([email], map: "idx_usuario_email")
+  @@index([id_empresa], map: "idx_usuario_empresa")
+}
+
+model articulos {
+  id_articulo          BigInt                 @id @default(autoincrement())
+  id_empresa           BigInt
+  codigo               String                 @db.VarChar(50)
+  descripcion          String                 @db.VarChar(200)
+  precio_final         Decimal                @db.Decimal(12, 2)
+  stock_actual         Decimal?               @default(0) @db.Decimal(12, 2)
+  stock_minimo         Decimal?               @default(0) @db.Decimal(12, 2)
+  estado               Boolean?               @default(true)
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?              @db.Timestamp(6)
+  empresas             empresas               @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_articulo_empresa")
+  detalle_orden_compra detalle_orden_compra[]
+  stock_movimientos    stock_movimientos[]
+
+  @@index([codigo], map: "idx_articulo_codigo")
+  @@index([id_empresa], map: "idx_articulo_empresa")
+}
+
+model auditoria_logs {
+  id_log         BigInt    @id @default(autoincrement())
+  id_empresa     BigInt?
+  id_usuario     BigInt?
+  tabla_afectada String?   @db.VarChar(100)
+  accion         String?   @db.VarChar(50)
+  registro_id    BigInt?
+  ip_origen      String?   @db.VarChar(100)
+  fecha          DateTime? @default(now()) @db.Timestamp(6)
+  empresas       empresas? @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_empresa")
+  usuarios       usuarios? @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_usuario")
+}
+
+model detalle_orden_compra {
+  id_detalle_orden     BigInt         @id @default(autoincrement())
+  id_orden_compra      BigInt
+  id_articulo          BigInt
+  descripcion_articulo String         @db.VarChar(200)
+  cantidad             Decimal        @db.Decimal(12, 2)
+  precio_unitario      Decimal        @db.Decimal(12, 2)
+  subtotal             Decimal        @db.Decimal(12, 2)
+  created_at           DateTime?      @default(now()) @db.Timestamp(6)
+  articulos            articulos      @relation(fields: [id_articulo], references: [id_articulo], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_articulo")
+  ordenes_compra       ordenes_compra @relation(fields: [id_orden_compra], references: [id_orden_compra], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_orden")
+}
+
+model ordenes_compra {
+  id_orden_compra      BigInt                 @id @default(autoincrement())
+  id_empresa           BigInt
+  id_cliente           BigInt
+  id_usuario           BigInt
+  numero_orden         String                 @db.VarChar(50)
+  fecha                DateTime?              @default(now()) @db.Timestamp(6)
+  estado               String?                @default("PENDIENTE") @db.VarChar(30)
+  total                Decimal                @default(0) @db.Decimal(12, 2)
+  observaciones        String?
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?              @default(now()) @db.Timestamp(6)
+  deleted_at           DateTime?              @db.Timestamp(6)
+  detalle_orden_compra detalle_orden_compra[]
+  clientes             clientes               @relation(fields: [id_cliente], references: [id_cliente], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_cliente")
+  empresas             empresas               @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_empresa")
+  usuarios             usuarios               @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_orden_usuario")
+
+  @@index([id_empresa], map: "idx_orden_empresa")
+  @@index([fecha], map: "idx_orden_fecha")
+}
+
+model stock_movimientos {
+  id_movimiento_stock BigInt    @id @default(autoincrement())
+  id_empresa          BigInt
+  id_articulo         BigInt
+  tipo_movimiento     String    @db.VarChar(30)
+  cantidad            Decimal   @db.Decimal(12, 2)
+  referencia          String?   @db.VarChar(100)
+  fecha               DateTime? @default(now()) @db.Timestamp(6)
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  articulos           articulos @relation(fields: [id_articulo], references: [id_articulo], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_articulo")
+  empresas            empresas  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_stock_empresa")
+
+  @@index([id_articulo], map: "idx_stock_articulo")
+}
+
+model suscripciones {
+  id_suscripcion    BigInt    @id @default(autoincrement())
+  id_empresa        BigInt
+  plan              String    @db.VarChar(50)
+  estado            String    @db.VarChar(30)
+  fecha_inicio      DateTime  @db.Timestamp(6)
+  fecha_vencimiento DateTime  @db.Timestamp(6)
+  max_usuarios      Int?      @default(1)
+  max_ordenes       Int?      @default(100)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  empresas          empresas  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_suscripcion_empresa")
+}
