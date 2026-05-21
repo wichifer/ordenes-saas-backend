@@ -4,10 +4,12 @@ import {
   Get,
   Post,
   Req,
+  Delete,
   Param,
   UseGuards,
 } from '@nestjs/common';
 
+import { CreateOrderDto } from './dto/create-order.dto';
 import { OrdersService } from './orders.service';
 
 import { JwtGuard } from '../auth/guards/jwt.guard';
@@ -45,7 +47,7 @@ export class OrdersController {
 
   @Post()
   create(
-    @Body() body: any,
+    @Body() body: CreateOrderDto,
     @Req() request: any,
   ) {
 
@@ -55,5 +57,20 @@ export class OrdersController {
     );
 
   }
+  
+  @Delete(':id')
+  remove(
 
+    @Param('id') id: string,
+
+    @Req() request: any,
+
+  ) {
+
+    return this.ordersService.remove(
+      id,
+      request.user.empresa,
+    );
+
+  }
 }

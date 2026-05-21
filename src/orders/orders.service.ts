@@ -1,4 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -14,6 +17,7 @@ export class OrdersService {
 
     where: {
       id_empresa: BigInt(id_empresa),
+      deleted_at: null,
     },
 
     include: {
@@ -53,13 +57,15 @@ async findOne(
 const orden =
   await this.prisma.ordenes_compra.findFirst({
 
-    where: {
+  where: {
 
-      id_orden_compra: BigInt(id),
+    id_orden_compra: BigInt(id),
 
-      id_empresa: BigInt(id_empresa),
+    id_empresa: BigInt(id_empresa),
 
-    },
+    deleted_at: null,
+
+  },
 
     include: {
 
@@ -95,7 +101,9 @@ const orden =
 
   });
   if (!orden) {
-    throw new Error('Orden no encontrada');
+    throw new NotFoundException(
+  'Orden no encontrada',
+);
   }
   return orden;
   
@@ -177,6 +185,51 @@ async create(data: any, user: any) {
   orden.id_orden_compra.toString(),
   user.empresa,
 );
+
+}
+async remove(
+  id: string,
+  id_empresa: string,
+) {
+
+  const orden =
+    await this.prisma.ordenes_compra.findFirst({
+
+      where: {
+
+        id_orden_compra: BigInt(id),
+
+        id_empresa: BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  if (!orden) {
+
+    throw new NotFoundException(
+      'Orden no encontrada',
+    );
+
+  }
+
+  await this.prisma.ordenes_compra.update({
+
+    where: {
+      id_orden_compra: orden.id_orden_compra,
+    },
+
+    data: {
+      deleted_at: new Date(),
+    },
+
+  });
+
+  return {
+    message: 'Orden eliminada',
+  };
 
 }
 }
