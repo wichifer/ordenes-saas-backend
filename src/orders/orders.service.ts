@@ -232,4 +232,57 @@ async remove(
   };
 
 }
+async update(
+  id: string,
+  data: any,
+  id_empresa: string,
+) {
+
+  const orden =
+    await this.prisma.ordenes_compra.findFirst({
+
+      where: {
+
+        id_orden_compra: BigInt(id),
+
+        id_empresa: BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  if (!orden) {
+
+    throw new NotFoundException(
+      'Orden no encontrada',
+    );
+
+  }
+
+  await this.prisma.ordenes_compra.update({
+
+    where: {
+      id_orden_compra: orden.id_orden_compra,
+    },
+
+    data: {
+
+      estado: data.estado,
+
+      observaciones:
+        data.observaciones,
+
+    },
+
+  });
+
+  return this.findOne(
+    id,
+    id_empresa,
+  );
+
+}
+
 }

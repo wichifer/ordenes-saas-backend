@@ -5,6 +5,7 @@ import {
   Post,
   Req,
   Delete,
+  Patch,
   Param,
   UseGuards,
 } from '@nestjs/common';
@@ -13,7 +14,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { OrdersService } from './orders.service';
 
 import { JwtGuard } from '../auth/guards/jwt.guard';
-
+import { UpdateOrderDto }from './dto/update-order.dto';
 @UseGuards(JwtGuard)
 
 @Controller('orders')
@@ -73,4 +74,22 @@ export class OrdersController {
     );
 
   }
+  @Patch(':id')
+update(
+
+  @Param('id') id: string,
+
+  @Body() body: UpdateOrderDto,
+
+  @Req() request: any,
+
+) {
+
+  return this.ordersService.update(
+    id,
+    body,
+    request.user.empresa,
+  );
+
+}
 }
