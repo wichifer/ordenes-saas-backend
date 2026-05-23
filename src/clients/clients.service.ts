@@ -7,6 +7,12 @@ import {
 import { PrismaService }
 from '../prisma/prisma.service';
 
+import { CreateClientDto }
+from './dto/create-client.dto';
+
+import { UpdateClientDto }
+from './dto/update-client.dto';
+
 @Injectable()
 
 export class ClientsService {
@@ -68,7 +74,7 @@ export class ClientsService {
   }
 
   async create(
-    data: any,
+    data: CreateClientDto,
     user: any,
   ) {
 
@@ -126,39 +132,38 @@ export class ClientsService {
 
     }
 
-    return this.prisma.clientes.create({
+   return this.prisma.clientes.create({
 
-      data: {
+  data: {
 
-        id_empresa: BigInt(user.empresa),
+    id_empresa: BigInt(user.empresa),
 
-        nombre: data.nombre,
+    nombre: data.nombre || '',
 
-        apellido: data.apellido,
+    apellido: data.apellido,
 
-        razon_social: data.razon_social,
+    razon_social: data.razon_social,
 
-        documento: data.documento,
+    documento: data.documento,
 
-        cuit: data.cuit,
+    cuit: data.cuit,
 
-        telefono: data.telefono,
+    telefono: data.telefono,
 
-        email: data.email,
+    email: data.email,
 
-        direccion: data.direccion,
+    direccion: data.direccion,
 
-        estado: true,
+    estado: true,
 
-      },
+  },
 
-    });
-
+});
   }
 
   async update(
     id: string,
-    data: any,
+    data: UpdateClientDto,
     id_empresa: string,
   ) {
 
@@ -253,25 +258,41 @@ export class ClientsService {
         id_cliente: client.id_cliente,
       },
 
-      data: {
+        data: {
 
-        nombre: data.nombre,
+    ...(data.nombre !== undefined && {
+      nombre: data.nombre,
+    }),
 
-        apellido: data.apellido,
+    ...(data.apellido !== undefined && {
+      apellido: data.apellido,
+    }),
 
-        razon_social: data.razon_social,
+    ...(data.razon_social !== undefined && {
+      razon_social: data.razon_social,
+    }),
 
-        documento: data.documento,
+    ...(data.documento !== undefined && {
+      documento: data.documento,
+    }),
 
-        cuit: data.cuit,
+    ...(data.cuit !== undefined && {
+      cuit: data.cuit,
+    }),
 
-        telefono: data.telefono,
+    ...(data.telefono !== undefined && {
+      telefono: data.telefono,
+    }),
 
-        email: data.email,
+    ...(data.email !== undefined && {
+      email: data.email,
+    }),
 
-        direccion: data.direccion,
+    ...(data.direccion !== undefined && {
+      direccion: data.direccion,
+    }),
 
-      },
+  },
 
     });
 

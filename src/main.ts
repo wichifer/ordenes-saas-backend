@@ -23,15 +23,29 @@ async function bootstrap() {
       }),
 
 );
-  const config = new DocumentBuilder()
-    .setTitle('Ordenes SaaS API')
-    .setDescription('API del sistema de gestión de órdenes de compra')
-    .setVersion('1.0')
-    .build();
+const config = new DocumentBuilder()
 
-  const document = SwaggerModule.createDocument(app, config);
+  .setTitle('Ordenes SaaS API')
 
-  SwaggerModule.setup('api', app, document);
+  .setDescription('API del sistema SaaS')
+
+  .setVersion('1.0')
+
+  .addBearerAuth()
+
+  .build();
+
+const document =
+  SwaggerModule.createDocument(
+    app,
+    config,
+  );
+
+SwaggerModule.setup(
+  'docs',
+  app,
+  document,
+);
 
   await app.listen(3000);
 

@@ -1,15 +1,22 @@
+
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
+
 
 @Injectable()
 
 export class OrdersService {
 
-  constructor(private prisma: PrismaService) {}
+constructor(
+
+  private prisma: PrismaService,
+
+) {}
 
   async findAll(id_empresa: string) {
 
@@ -129,6 +136,7 @@ async create(data: any, user: any) {
   });
 
   // calcular total
+  
   const total = items.reduce(
 
     (acc: number, item: any) => {
@@ -261,10 +269,175 @@ async update(
 
   }
 
+  /*
+    ==================================================
+    DESCONTAR STOCK SI PASA A APROBADA
+    ==================================================
+  */
+
+ if (
+  orden.estado !== 'APROBADA' &&
+  data.estado === 'APROBADA'
+) {
+
+  const detalles =
+    await this.prisma.detalle_orden_compra.findMany({
+
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
+
+    });
+
+  await this.prisma.$transaction(
+
+    async (tx) => {
+
+      for (const item of detalles) {
+
+        const articulo =
+          await tx.articulos.findFirst({
+
+            where: {
+
+              id_articulo:
+                item.id_articulo,
+
+              id_empresa:
+                BigInt(id_empresa),
+
+              deleted_at: null,
+
+            },
+
+          });
+
+        if (!articulo) {
+
+          throw new NotFoundException(
+
+            `Artículo ${item.descripcion_articulo} no encontrado`,
+
+          );
+
+        }
+
+        /*
+          VALIDAR STOCK
+        */
+
+        if (
+
+          Number(articulo.stock_actual) <
+          Number(item.cantidad)
+
+        ) {
+
+          throw new BadRequestException(
+
+            `Stock insuficiente para ${item.descripcion_articulo}`,
+
+          );
+
+        }
+
+        /*
+          DESCONTAR STOCK
+        */
+
+        const nuevoStock =
+
+          Number(articulo.stock_actual) -
+          Number(item.cantidad);
+
+        await tx.articulos.update({
+
+          where: {
+            id_articulo:
+              articulo.id_articulo,
+          },
+
+          data: {
+            stock_actual: nuevoStock,
+          },
+
+        });
+
+        /*
+          MOVIMIENTO STOCK
+        */
+
+        await tx.stock_movimientos.create({
+
+          data: {
+
+            id_empresa:
+              BigInt(id_empresa),
+
+            id_articulo:
+              articulo.id_articulo,
+
+            tipo_movimiento:
+              'SALIDA',
+
+            cantidad:
+              item.cantidad,
+
+            referencia:
+              orden.numero_orden,
+
+          },
+
+        });
+
+      }
+
+      /*
+        ACTUALIZAR ORDEN
+      */
+
+      await tx.ordenes_compra.update({
+
+        where: {
+
+          id_orden_compra:
+            orden.id_orden_compra,
+
+        },
+
+        data: {
+
+          estado: data.estado,
+
+          observaciones:
+            data.observaciones,
+
+        },
+
+      });
+
+    },
+
+  );
+
+  return this.findOne(
+    id,
+    id_empresa,
+  );
+
+}
+  /*
+    ==================================================
+    ACTUALIZAR ORDEN
+    ==================================================
+  */
+
   await this.prisma.ordenes_compra.update({
 
     where: {
-      id_orden_compra: orden.id_orden_compra,
+      id_orden_compra:
+        orden.id_orden_compra,
     },
 
     data: {
