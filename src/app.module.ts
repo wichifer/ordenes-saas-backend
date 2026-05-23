@@ -13,6 +13,8 @@ import { AuthModule } from './auth/auth.module';
 
 import { OrdersModule } from './orders/orders.module';
 import { ArticlesModule } from './articles/articles.module';
+import { ProductsModule } from './products/products.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
 
@@ -23,6 +25,8 @@ import { ArticlesModule } from './articles/articles.module';
     AuthModule,
     OrdersModule,
     ArticlesModule,
+    ProductsModule,
+    ClientsModule,
   ],
 
   controllers: [AppController],
