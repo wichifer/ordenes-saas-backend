@@ -16,6 +16,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { ProductsModule } from './products/products.module';
 import { ClientsModule } from './clients/clients.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
 
@@ -29,6 +30,7 @@ import { StockMovementsModule } from './stock-movements/stock-movements.module';
     ProductsModule,
     ClientsModule,
     StockMovementsModule,
+    PaymentsModule,
   ],
 
   controllers: [AppController],

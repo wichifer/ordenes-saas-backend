@@ -6,21 +6,25 @@ export class ArticlesService {
 
   constructor(private prisma: PrismaService) {}
 
-  async findAll(id_empresa: string) {
+async findAll(id_empresa: string) {
 
-    return this.prisma.articulos.findMany({
+  return this.prisma.articulos.findMany({
 
-      where: {
-        id_empresa: BigInt(id_empresa),
-      },
+    where: {
 
-      orderBy: {
-        id_articulo: 'desc',
-      },
+      id_empresa: BigInt(id_empresa),
 
-    });
+      deleted_at: null,
 
-  }
+    },
+
+    orderBy: {
+      id_articulo: 'desc',
+    },
+
+  });
+
+}
 
   async create(data: any, user: any) {
 

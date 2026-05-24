@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { ArticlesController }
-from './articles.controller';
+import { PaymentsController }
+from './payments.controller';
 
-import { ArticlesService }
-from './articles.service';
+import { PaymentsService }
+from './payments.service';
 
 import { PrismaModule }
 from '../prisma/prisma.module';
@@ -34,12 +34,12 @@ from '../auth/guards/jwt.guard';
   ],
 
   controllers: [
-    ArticlesController,
+    PaymentsController,
   ],
 
   providers: [
 
-    ArticlesService,
+    PaymentsService,
 
     JwtGuard,
 
@@ -47,4 +47,4 @@ from '../auth/guards/jwt.guard';
 
 })
 
-export class ArticlesModule {}
+export class PaymentsModule {}
