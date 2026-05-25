@@ -1,4 +1,3 @@
-
 import {
   Injectable,
   NotFoundException,
@@ -7,277 +6,527 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 
+import { CreateOrderDto }
+from './dto/create-order.dto';
+
+import { UpdateOrderDto }
+from './dto/update-order.dto';
 
 @Injectable()
 
 export class OrdersService {
 
-constructor(
+  constructor(
+    private prisma: PrismaService,
+  ) {}
 
-  private prisma: PrismaService,
-
-) {}
+  /*
+  ==================================================
+  LISTAR ORDENES
+  ==================================================
+  */
 
   async findAll(id_empresa: string) {
 
-  return this.prisma.ordenes_compra.findMany({
-
-    where: {
-      id_empresa: BigInt(id_empresa),
-      deleted_at: null,
-    },
-
-    include: {
-
-  clientes: true,
-
-  usuarios: {
-
-    select: {
-
-      id_usuario: true,
-
-      nombre: true,
-
-      apellido: true,
-
-      email: true,
-
-    },
-
-  },
-
-},
-
-    orderBy: {
-      id_orden_compra: 'desc',
-    },
-
-  });
-
-}
-async findOne(
-  id: string,
-  id_empresa: string,
-) {
-
-const orden =
-  await this.prisma.ordenes_compra.findFirst({
-
-  where: {
-
-    id_orden_compra: BigInt(id),
-
-    id_empresa: BigInt(id_empresa),
-
-    deleted_at: null,
-
-  },
-
-    include: {
-
-      clientes: true,
-
-      usuarios: {
-
-  select: {
-
-    id_usuario: true,
-
-    nombre: true,
-
-    apellido: true,
-
-    email: true,
-
-  },
-
-},
-
-      detalle_orden_compra: {
-
-  include: {
-
-    articulos: true,
-
-  },
-
-},
-
-    },
-
-  });
-  if (!orden) {
-    throw new NotFoundException(
-  'Orden no encontrada',
-);
-  }
-  return orden;
-  
-
-}
-async create(data: any, user: any) {
-
-  // calcular subtotales
-  if (!data.items || !Array.isArray(data.items)) {
-    throw new Error('Items requeridos');
-    }
-  const items = data.items.map((item: any) => {
-
-    const subtotal =
-      Number(item.cantidad) *
-      Number(item.precio_unitario);
-
-    return {
-      ...item,
-      subtotal,
-    };
-
-  });
-
-  // calcular total
-  
-  const total = items.reduce(
-
-    (acc: number, item: any) => {
-      return acc + item.subtotal;
-    },
-
-    0,
-
-  );
-
-  // crear orden
-  const orden = await this.prisma.ordenes_compra.create({
-
-    data: {
-
-      id_empresa: BigInt(user.empresa),
-
-      id_cliente: BigInt(data.id_cliente),
-
-      id_usuario: BigInt(user.sub),
-
-      numero_orden: data.numero_orden,
-
-      observaciones: data.observaciones,
-
-      total,
-
-    },
-
-  });
-
-  // crear detalles
-  await this.prisma.detalle_orden_compra.createMany({
-
-    data: items.map((item: any) => ({
-
-      id_orden_compra: orden.id_orden_compra,
-
-      id_articulo: BigInt(item.id_articulo),
-
-      descripcion_articulo: item.descripcion_articulo,
-
-      cantidad: item.cantidad,
-
-      precio_unitario: item.precio_unitario,
-
-      subtotal: item.subtotal,
-
-    })),
-
-  });
-
-  return this.findOne(
-  orden.id_orden_compra.toString(),
-  user.empresa,
-);
-
-}
-async remove(
-  id: string,
-  id_empresa: string,
-) {
-
-  const orden =
-    await this.prisma.ordenes_compra.findFirst({
+    return this.prisma.ordenes_compra.findMany({
 
       where: {
-
-        id_orden_compra: BigInt(id),
-
         id_empresa: BigInt(id_empresa),
-
         deleted_at: null,
+      },
 
+      include: {
+
+        clientes: true,
+
+        usuarios: {
+
+          select: {
+
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            email: true,
+
+          },
+
+        },
+
+      },
+
+      orderBy: {
+        id_orden_compra: 'desc',
       },
 
     });
 
-  if (!orden) {
+  }
 
-    throw new NotFoundException(
-      'Orden no encontrada',
+  /*
+  ==================================================
+  OBTENER UNA ORDEN
+  ==================================================
+  */
+
+  async findOne(
+    id: string,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+        include: {
+
+          clientes: true,
+
+          usuarios: {
+
+            select: {
+
+              id_usuario: true,
+              nombre: true,
+              apellido: true,
+              email: true,
+
+            },
+
+          },
+
+          detalle_orden_compra: {
+
+            include: {
+
+              articulos: true,
+
+            },
+
+          },
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+
+    }
+
+    return orden;
+
+  }
+
+  /*
+  ==================================================
+  CREAR ORDEN
+  ==================================================
+  */
+
+  async create(
+    body: CreateOrderDto,
+    user: any,
+  ) {
+
+    /*
+    VALIDAR ITEMS
+    */
+
+    if (
+      !body.items ||
+      !Array.isArray(body.items)
+    ) {
+
+      throw new BadRequestException(
+        'Items requeridos',
+      );
+
+    }
+
+    /*
+    CALCULAR SUBTOTALES
+    */
+
+    const items = body.items.map((item: any) => {
+
+      const subtotal =
+        Number(item.cantidad) *
+        Number(item.precio_unitario);
+
+      return {
+
+        ...item,
+
+        subtotal,
+
+      };
+
+    });
+
+    /*
+    TOTAL
+    */
+
+    const total = items.reduce(
+
+      (acc: number, item: any) => {
+        return acc + item.subtotal;
+      },
+
+      0,
+
     );
 
-  }
+    /*
+    CREAR ORDEN
+    */
 
-  await this.prisma.ordenes_compra.update({
+    const orden =
+      await this.prisma.ordenes_compra.create({
 
-    where: {
-      id_orden_compra: orden.id_orden_compra,
-    },
+        data: {
 
-    data: {
-      deleted_at: new Date(),
-    },
+          id_empresa:
+            BigInt(user.empresa),
 
-  });
+          id_cliente:
+            BigInt(body.id_cliente),
 
-  return {
-    message: 'Orden eliminada',
-  };
+          id_usuario:
+            BigInt(user.sub),
 
-}
-async update(
-  id: string,
-  data: any,
-  id_empresa: string,
-) {
+          numero_orden:
+            body.numero_orden,
 
-  const orden =
-    await this.prisma.ordenes_compra.findFirst({
+          observaciones:
+            body.observaciones,
 
-      where: {
+          total,
 
-        id_orden_compra: BigInt(id),
+        },
 
-        id_empresa: BigInt(id_empresa),
+      });
 
-        deleted_at: null,
+    /*
+    CREAR DETALLES
+    */
 
-      },
+    await this.prisma.detalle_orden_compra.createMany({
+
+      data: items.map((item: any) => ({
+
+        id_orden_compra:
+          orden.id_orden_compra,
+
+        id_articulo:
+          BigInt(item.id_articulo),
+
+        descripcion_articulo:
+          item.descripcion_articulo,
+
+        cantidad:
+          item.cantidad,
+
+        precio_unitario:
+          item.precio_unitario,
+
+        subtotal:
+          item.subtotal,
+
+      })),
 
     });
 
-  if (!orden) {
+    /*
+    RETORNAR ORDEN COMPLETA
+    */
 
-    throw new NotFoundException(
-      'Orden no encontrada',
+    return this.findOne(
+      orden.id_orden_compra.toString(),
+      user.empresa,
     );
 
   }
 
   /*
+  ==================================================
+  ELIMINAR ORDEN
+  ==================================================
+  */
+
+  async remove(
+    id: string,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+
+    }
+
+    await this.prisma.ordenes_compra.update({
+
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
+
+      data: {
+        deleted_at: new Date(),
+      },
+
+    });
+
+    return {
+      message: 'Orden eliminada',
+    };
+
+  }
+
+  /*
+  ==================================================
+  ACTUALIZAR ORDEN
+  ==================================================
+  */
+
+  async update(
+    id: string,
+    data: UpdateOrderDto,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+    
+    }
+if (orden.estado === 'ENTREGADA') {
+
+  throw new BadRequestException(
+    'La orden ya fue entregada',
+  );
+
+}
+if (orden.estado === 'CANCELADA') {
+
+  throw new BadRequestException(
+    'La orden está cancelada',
+  );
+
+}
+    /*
     ==================================================
     DESCONTAR STOCK SI PASA A APROBADA
     ==================================================
-  */
+    */
 
- if (
-  orden.estado !== 'APROBADA' &&
-  data.estado === 'APROBADA'
+    if (
+
+      orden.estado !== 'APROBADA' &&
+      data.estado === 'APROBADA'
+
+    ) {
+
+      const detalles =
+        await this.prisma.detalle_orden_compra.findMany({
+
+          where: {
+
+            id_orden_compra:
+              orden.id_orden_compra,
+
+          },
+
+        });
+
+      await this.prisma.$transaction(
+
+        async (tx) => {
+
+          for (const item of detalles) {
+
+            const articulo =
+              await tx.articulos.findFirst({
+
+                where: {
+
+                  id_articulo:
+                    item.id_articulo,
+
+                  id_empresa:
+                    BigInt(id_empresa),
+
+                  deleted_at: null,
+
+                },
+
+              });
+
+            if (!articulo) {
+
+              throw new NotFoundException(
+
+                `Artículo ${item.descripcion_articulo} no encontrado`,
+
+              );
+
+            }
+
+            /*
+            VALIDAR STOCK
+            */
+
+            if (
+
+              Number(articulo.stock_actual) <
+              Number(item.cantidad)
+
+            ) {
+
+              throw new BadRequestException(
+
+                `Stock insuficiente para ${item.descripcion_articulo}`,
+
+              );
+
+            }
+
+            /*
+            DESCONTAR STOCK
+            */
+
+            const nuevoStock =
+
+              Number(articulo.stock_actual) -
+              Number(item.cantidad);
+
+            await tx.articulos.update({
+
+              where: {
+                id_articulo:
+                  articulo.id_articulo,
+              },
+
+              data: {
+                stock_actual: nuevoStock,
+              },
+
+            });
+
+            /*
+            MOVIMIENTO STOCK
+            */
+
+            await tx.stock_movimientos.create({
+
+              data: {
+
+                id_empresa:
+                  BigInt(id_empresa),
+
+                id_articulo:
+                  articulo.id_articulo,
+
+                tipo_movimiento:
+                  'SALIDA',
+
+                cantidad:
+                  item.cantidad,
+
+                referencia:
+                  orden.numero_orden,
+
+              },
+
+            });
+
+          }
+
+          /*
+          ACTUALIZAR ORDEN
+          */
+
+          await tx.ordenes_compra.update({
+
+            where: {
+
+              id_orden_compra:
+                orden.id_orden_compra,
+
+            },
+
+            data: {
+
+              estado:
+                data.estado,
+
+              observaciones:
+                data.observaciones,
+
+            },
+
+          });
+
+        },
+
+      );
+
+      return this.findOne(
+        id,
+        id_empresa,
+      );
+
+    }
+  if (
+  orden.estado === 'APROBADA' &&
+  data.estado === 'CANCELADA'
 ) {
 
   const detalles =
@@ -300,55 +549,20 @@ async update(
           await tx.articulos.findFirst({
 
             where: {
-
-              id_articulo:
-                item.id_articulo,
-
-              id_empresa:
-                BigInt(id_empresa),
-
-              deleted_at: null,
-
+              id_articulo: item.id_articulo,
             },
 
           });
 
-        if (!articulo) {
-
-          throw new NotFoundException(
-
-            `Artículo ${item.descripcion_articulo} no encontrado`,
-
-          );
-
-        }
+        if (!articulo) continue;
 
         /*
-          VALIDAR STOCK
-        */
-
-        if (
-
-          Number(articulo.stock_actual) <
-          Number(item.cantidad)
-
-        ) {
-
-          throw new BadRequestException(
-
-            `Stock insuficiente para ${item.descripcion_articulo}`,
-
-          );
-
-        }
-
-        /*
-          DESCONTAR STOCK
+        DEVOLVER STOCK
         */
 
         const nuevoStock =
 
-          Number(articulo.stock_actual) -
+          Number(articulo.stock_actual) +
           Number(item.cantidad);
 
         await tx.articulos.update({
@@ -365,7 +579,7 @@ async update(
         });
 
         /*
-          MOVIMIENTO STOCK
+        MOVIMIENTO STOCK
         */
 
         await tx.stock_movimientos.create({
@@ -379,7 +593,7 @@ async update(
               articulo.id_articulo,
 
             tipo_movimiento:
-              'SALIDA',
+              'ENTRADA',
 
             cantidad:
               item.cantidad,
@@ -394,21 +608,20 @@ async update(
       }
 
       /*
-        ACTUALIZAR ORDEN
+      ACTUALIZAR ORDEN
       */
 
       await tx.ordenes_compra.update({
 
         where: {
-
           id_orden_compra:
             orden.id_orden_compra,
-
         },
 
         data: {
 
-          estado: data.estado,
+          estado:
+            data.estado,
 
           observaciones:
             data.observaciones,
@@ -427,35 +640,36 @@ async update(
   );
 
 }
-  /*
+    /*
     ==================================================
-    ACTUALIZAR ORDEN
+    ACTUALIZAR NORMAL
     ==================================================
-  */
+    */
 
-  await this.prisma.ordenes_compra.update({
+    await this.prisma.ordenes_compra.update({
 
-    where: {
-      id_orden_compra:
-        orden.id_orden_compra,
-    },
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
 
-    data: {
+      data: {
 
-      estado: data.estado,
+        estado:
+          data.estado,
 
-      observaciones:
-        data.observaciones,
+        observaciones:
+          data.observaciones,
 
-    },
+      },
 
-  });
+    });
 
-  return this.findOne(
-    id,
-    id_empresa,
-  );
+    return this.findOne(
+      id,
+      id_empresa,
+    );
 
-}
+  }
 
 }

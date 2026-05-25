@@ -13,6 +13,9 @@ from './payments.service';
 import { JwtGuard }
 from '../auth/guards/jwt.guard';
 
+import { CreatePaymentDto } from './dto/create-payment.dto';
+
+
 @UseGuards(JwtGuard)
 
 @Controller('payments')
@@ -37,7 +40,7 @@ export class PaymentsController {
 
   @Post()
   create(
-    @Body() body: any,
+    @Body() body: CreatePaymentDto, 
     @Req() request: any,
   ) {
 

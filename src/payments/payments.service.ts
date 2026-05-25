@@ -11,6 +11,7 @@ import {
 import { PrismaService }
 
 from '../prisma/prisma.service';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 
 @Injectable()
 
@@ -53,49 +54,37 @@ export class PaymentsService {
 
   }
 
-  async create(
+async create(
+  data: CreatePaymentDto,
+  user: any,
+) {
 
-    data: any,
+const orden =
 
-    user: any,
+  await this.prisma.ordenes_compra.findFirst({
 
-  ) {
+    where: {
 
-    const orden =
+      id_orden_compra:
+        BigInt(data.id_orden_compra),
 
-      await this.prisma.ordenes_compra.findFirst({
+      id_empresa:
+        BigInt(user.empresa),
 
-        where: {
+      deleted_at: null,
 
-          id_orden_compra:
-            BigInt(data.id_orden_compra),
+    },
 
-          id_empresa:
-            BigInt(user.empresa),
+  });
 
-          deleted_at: null,
-
-        },
-
-      });
-      if (!orden) {
+if (!orden) {
 
   throw new NotFoundException(
     'Orden no encontrada',
   );
 
 }
-
-    if (!orden) {
-
-      throw new NotFoundException(
-
-        'Orden no encontrada',
-
-      );
-
-    }
-
+ 
     /*
       PAGOS EXISTENTES
     */

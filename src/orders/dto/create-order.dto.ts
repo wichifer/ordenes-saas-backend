@@ -1,21 +1,38 @@
 import {
   IsArray,
-  IsNumber,
+  IsNotEmpty,
+  IsNumberString,
   IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { CreateOrderItemDto }
-from './create-order-item.dto';
+
+class OrderItemDto {
+
+  @IsNotEmpty()
+  @IsNumberString()
+  id_articulo: string;
+
+  @IsNotEmpty()
+  descripcion_articulo: string;
+
+  @IsNotEmpty()
+  cantidad: number;
+
+  @IsNotEmpty()
+  precio_unitario: number;
+
+}
 
 export class CreateOrderDto {
 
-  @IsNumber()
-  id_cliente: number;
+  @IsNotEmpty()
+  @IsNumberString()
+  id_cliente: string;
 
+  @IsNotEmpty()
   @IsString()
   numero_orden: string;
 
@@ -25,9 +42,7 @@ export class CreateOrderDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-
-  @Type(() => CreateOrderItemDto)
-
-  items: CreateOrderItemDto[];
+  @Type(() => OrderItemDto)
+  items: OrderItemDto[];
 
 }

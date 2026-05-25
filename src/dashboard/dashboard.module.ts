@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { StockMovementsController }
-from './stock-movements.controller';
+import { DashboardController }
+from './dashboard.controller';
 
-import { StockMovementsService }
-from './stock-movements.service';
+import { DashboardService }
+from './dashboard.service';
 
 import { PrismaModule }
 from '../prisma/prisma.module';
@@ -15,24 +15,18 @@ from '../auth/auth.module';
 @Module({
 
   imports: [
-
     PrismaModule,
     AuthModule,
-
   ],
 
   controllers: [
-
-    StockMovementsController,
-
+    DashboardController,
   ],
 
   providers: [
-
-    StockMovementsService,
-
+    DashboardService,
   ],
 
 })
 
-export class StockMovementsModule {}
+export class DashboardModule {}
