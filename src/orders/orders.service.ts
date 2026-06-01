@@ -144,6 +144,33 @@ export class OrdersService {
     user: any,
   ) {
 
+    const ultimaOrden =
+  await this.prisma.ordenes_compra.findFirst({
+
+    where: {
+      id_empresa: BigInt(user.empresa),
+    },
+
+    orderBy: {
+      id_orden_compra: 'desc',
+    },
+
+  });
+  let numeroOrden = 'OC-0001';
+
+if (ultimaOrden) {
+
+  const ultimoNumero = Number(
+    ultimaOrden.numero_orden
+      .replace('OC-', ''),
+  );
+
+  numeroOrden =
+    `OC-${String(
+      ultimoNumero + 1,
+    ).padStart(4, '0')}`;
+
+}
     /*
     VALIDAR ITEMS
     */
@@ -211,8 +238,7 @@ export class OrdersService {
           id_usuario:
             BigInt(user.sub),
 
-          numero_orden:
-            body.numero_orden,
+          numero_orden: numeroOrden,
 
           observaciones:
             body.observaciones,

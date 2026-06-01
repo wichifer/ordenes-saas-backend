@@ -32,10 +32,6 @@ export class CreateOrderDto {
   @IsNumberString()
   id_cliente: string;
 
-  @IsNotEmpty()
-  @IsString()
-  numero_orden: string;
-
   @IsOptional()
   @IsString()
   observaciones?: string;
