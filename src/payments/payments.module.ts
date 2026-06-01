@@ -1,36 +1,19 @@
 import { Module } from '@nestjs/common';
 
-import { PaymentsController }
-from './payments.controller';
+import { PaymentsController } from './payments.controller';
+import { PaymentsService } from './payments.service';
 
-import { PaymentsService }
-from './payments.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
+import { AuditModule } from '../audit/audit.module';
 
-import { PrismaModule }
-from '../prisma/prisma.module';
-
-import { JwtModule }
-from '@nestjs/jwt';
-
-import { JwtGuard }
-from '../auth/guards/jwt.guard';
+import { JwtGuard } from '../auth/guards/jwt.guard';
 
 @Module({
-
   imports: [
-
     PrismaModule,
-
-    JwtModule.register({
-
-      secret: process.env.JWT_SECRET,
-
-      signOptions: {
-        expiresIn: '1d',
-      },
-
-    }),
-
+    AuthModule,
+    AuditModule,
   ],
 
   controllers: [
@@ -38,13 +21,8 @@ from '../auth/guards/jwt.guard';
   ],
 
   providers: [
-
     PaymentsService,
-
     JwtGuard,
-
   ],
-
 })
-
 export class PaymentsModule {}

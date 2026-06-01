@@ -18,24 +18,32 @@ import { ClientsModule } from './clients/clients.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AuditModule } from './audit/audit.module';
+import { ConfigModule } from '@nestjs/config';
 
 
 @Module({
 
   imports: [
-    PrismaModule,
-    CompaniesModule,
-    UsersModule,
-    AuthModule,
-    OrdersModule,
-    ArticlesModule,
-    ProductsModule,
-    ClientsModule,
-    StockMovementsModule,
-    PaymentsModule,
-    DashboardModule,
-  ],
 
+  ConfigModule.forRoot({
+    isGlobal: true,
+  }),
+
+  PrismaModule,
+  CompaniesModule,
+  UsersModule,
+  AuthModule,
+  OrdersModule,
+  ArticlesModule,
+  ProductsModule,
+  ClientsModule,
+  StockMovementsModule,
+  PaymentsModule,
+  DashboardModule,
+  AuditModule,
+
+],
   controllers: [AppController],
 
   providers: [AppService],

@@ -40,7 +40,62 @@ export class ClientsService {
     });
 
   }
+async getBalance(
+  id: string,
+  id_empresa: string,
+) {
 
+  const cliente =
+    await this.findOne(
+      id,
+      id_empresa,
+    );
+
+  const movimientos =
+    await this.prisma.cliente_movimientos.findMany({
+
+      where: {
+
+        id_cliente: BigInt(id),
+
+        id_empresa: BigInt(id_empresa),
+
+      },
+
+    });
+
+  let debe = 0;
+  let pagado = 0;
+
+  for (const mov of movimientos) {
+
+  const monto = Number(mov.monto);
+
+  switch (mov.tipo_movimiento) {
+
+    case 'VENTA':
+      debe += monto;
+      break;
+
+    case 'PAGO':
+    case 'NOTA_CREDITO':
+      pagado += monto;
+      break;
+  }
+}
+  return {
+
+    cliente,
+
+    debe,
+
+    pagado,
+
+    saldo: debe - pagado,
+
+  };
+
+}
   async findOne(
     id: string,
     id_empresa: string,
@@ -348,5 +403,33 @@ export class ClientsService {
     };
 
   }
+async getMovimientos(
+  id: string,
+  id_empresa: string,
+) {
 
+  await this.findOne(
+    id,
+    id_empresa,
+  );
+
+  return this.prisma.cliente_movimientos.findMany({
+
+    where: {
+
+      id_cliente: BigInt(id),
+
+      id_empresa: BigInt(id_empresa),
+
+    },
+
+    orderBy: {
+
+      created_at: 'desc',
+
+    },
+
+  });
+
+}
 }

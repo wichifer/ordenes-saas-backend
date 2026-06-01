@@ -6,7 +6,7 @@ import { CompaniesService } from './companies.service';
 
 import { PrismaModule } from '../prisma/prisma.module';
 
-import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
 
@@ -14,10 +14,7 @@ import { JwtModule } from '@nestjs/jwt';
 
   PrismaModule,
 
-  JwtModule.register({
-    secret: process.env.JWT_SECRET,
-  }),
-
+  AuthModule,
 ],
 
 

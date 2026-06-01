@@ -10,12 +10,15 @@ from '../prisma/prisma.service';
 import { CreateStockMovementDto }
 from './dto/create-stock-movement.dto';
 
+import { AuditService }
+from '../audit/audit.service';
 @Injectable()
 
 export class StockMovementsService {
 
   constructor(
     private prisma: PrismaService,
+    private auditService: AuditService,
   ) {}
 
   /*

@@ -15,48 +15,50 @@ model auth_providers {
 }
 
 model clientes {
-  id_cliente     BigInt           @id @default(autoincrement())
-  id_empresa     BigInt
-  nombre         String           @db.VarChar(100)
-  apellido       String?          @db.VarChar(100)
-  razon_social   String?          @db.VarChar(150)
-  documento      String?          @db.VarChar(30)
-  cuit           String?          @db.VarChar(20)
-  telefono       String?          @db.VarChar(50)
-  email          String?          @db.VarChar(150)
-  direccion      String?
-  estado         Boolean?         @default(true)
-  created_at     DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at     DateTime?        @default(now()) @db.Timestamp(6)
-  deleted_at     DateTime?        @db.Timestamp(6)
-  empresas       empresas         @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_empresa")
-  ordenes_compra ordenes_compra[]
-  pagos          pagos[]
+  id_cliente          BigInt                @id @default(autoincrement())
+  id_empresa          BigInt
+  nombre              String                @db.VarChar(100)
+  apellido            String?               @db.VarChar(100)
+  razon_social        String?               @db.VarChar(150)
+  documento           String?               @db.VarChar(30)
+  cuit                String?               @db.VarChar(20)
+  telefono            String?               @db.VarChar(50)
+  email               String?               @db.VarChar(150)
+  direccion           String?
+  estado              Boolean?              @default(true)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?             @db.Timestamp(6)
+  empresas            empresas              @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_cliente_empresa")
+  ordenes_compra      ordenes_compra[]
+  pagos               pagos[]
+  cliente_movimientos cliente_movimientos[]
 
   @@index([id_empresa], map: "idx_cliente_empresa")
 }
 
 model empresas {
-  id_empresa        BigInt              @id @default(autoincrement())
-  razon_social      String              @db.VarChar(150)
-  nombre_comercial  String?             @db.VarChar(150)
-  cuit              String?             @db.VarChar(20)
-  email             String?             @db.VarChar(150)
-  telefono          String?             @db.VarChar(50)
-  direccion         String?
-  estado            Boolean?            @default(true)
-  plan_saas         String?             @default("TRIAL") @db.VarChar(50)
-  created_at        DateTime?           @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?           @default(now()) @db.Timestamp(6)
-  deleted_at        DateTime?           @db.Timestamp(6)
-  articulos         articulos[]
-  auditoria_logs    auditoria_logs[]
-  clientes          clientes[]
-  ordenes_compra    ordenes_compra[]
-  stock_movimientos stock_movimientos[]
-  suscripciones     suscripciones[]
-  usuarios          usuarios[]
-  pagos             pagos[]
+  id_empresa          BigInt                @id @default(autoincrement())
+  razon_social        String                @db.VarChar(150)
+  nombre_comercial    String?               @db.VarChar(150)
+  cuit                String?               @db.VarChar(20)
+  email               String?               @db.VarChar(150)
+  telefono            String?               @db.VarChar(50)
+  direccion           String?
+  estado              Boolean?              @default(true)
+  plan_saas           String?               @default("TRIAL") @db.VarChar(50)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  deleted_at          DateTime?             @db.Timestamp(6)
+  articulos           articulos[]
+  auditoria_logs      auditoria_logs[]
+  clientes            clientes[]
+  ordenes_compra      ordenes_compra[]
+  stock_movimientos   stock_movimientos[]
+  suscripciones       suscripciones[]
+  usuarios            usuarios[]
+  pagos               pagos[]
+  cliente_movimientos cliente_movimientos[]
 }
 
 model roles {
@@ -198,6 +200,29 @@ model pagos {
 
   @@index([id_empresa], map: "idx_pago_empresa")
   @@index([id_orden_compra], map: "idx_pago_orden")
+}
+
+model cliente_movimientos {
+  id_movimiento_cliente BigInt @id @default(autoincrement())
+
+  id_empresa BigInt
+
+  id_cliente BigInt
+
+  tipo_movimiento String
+
+  monto Decimal @db.Decimal(18, 2)
+
+  observacion String?
+
+  created_at DateTime @default(now())
+
+  empresas empresas @relation(fields: [id_empresa], references: [id_empresa])
+
+  clientes clientes @relation(fields: [id_cliente], references: [id_cliente])
+
+  @@index([id_empresa])
+  @@index([id_cliente])
 }
 
 model stock_movimientos {

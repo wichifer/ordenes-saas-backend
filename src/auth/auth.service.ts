@@ -6,11 +6,15 @@ import { JwtService } from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt';
 
+import { AuditService }
+from '../audit/audit.service';
+
 @Injectable()
 export class AuthService {
 
   constructor(
     private prisma: PrismaService,
+    private auditService: AuditService,
     private jwtService: JwtService,
   ) {}
 

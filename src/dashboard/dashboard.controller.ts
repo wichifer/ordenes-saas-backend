@@ -72,5 +72,20 @@ export class DashboardController {
     );
 
   }
+  /*
+  ==================================================
+  PRODUCTOS MAS VENDIDOS
+  ==================================================
+  */
 
+  @Get('top-products')
+  topProducts(
+    @Req() request: any,
+  ) {
+
+    return this.dashboardService.topProducts(
+      request.user.empresa,
+    );
+
+  }
 }

@@ -298,5 +298,97 @@ export class DashboardService {
     );
 
   }
+  /*
+  ==================================================
+  PRODUCTOS MAS VENDIDOS
+  ==================================================
+  */
 
+  async topProducts(
+    id_empresa: string,
+  ) {
+
+    const detalles =
+      await this.prisma.detalle_orden_compra.findMany({
+
+        where: {
+
+          ordenes_compra: {
+
+            id_empresa:
+              BigInt(id_empresa),
+
+            estado: 'APROBADA',
+
+            deleted_at: null,
+
+          },
+
+        },
+
+        select: {
+
+          articulos: {
+
+  select: {
+
+    descripcion: true,
+
+  },
+
+},
+
+          cantidad: true,
+
+        },
+
+      });
+
+    /*
+    AGRUPAR
+    */
+
+    const resumen: any = {};
+
+    for (const item of detalles) {
+
+      const descripcion = item.articulos.descripcion;
+
+      if (!resumen[descripcion]) {
+
+        resumen[descripcion] = 0;
+
+      }
+
+      resumen[descripcion] +=
+        Number(item.cantidad);
+
+    }
+
+    /*
+    FORMATEAR
+    */
+
+    return Object.keys(resumen).map(
+
+      (descripcion) => ({
+
+        descripcion_articulo:
+          descripcion,
+
+        cantidad_vendida:
+          resumen[descripcion],
+
+      }),
+
+    ).sort(
+
+      (a, b) =>
+
+        b.cantidad_vendida -
+        a.cantidad_vendida,
+
+    );
+
+  }
 }

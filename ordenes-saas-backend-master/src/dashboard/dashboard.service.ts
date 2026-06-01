@@ -1,0 +1,302 @@
+import { Injectable } from '@nestjs/common';
+
+import { PrismaService }
+from '../prisma/prisma.service';
+
+@Injectable()
+
+export class DashboardService {
+
+  constructor(
+    private prisma: PrismaService,
+  ) {}
+
+  /*
+  ==================================================
+  KPIs
+  ==================================================
+  */
+
+  async getKpis(
+    id_empresa: string,
+  ) {
+
+    /*
+    CLIENTES
+    */
+
+    const clientes =
+      await this.prisma.clientes.count({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    /*
+    ARTICULOS
+    */
+
+    const articulos =
+      await this.prisma.articulos.count({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    /*
+    STOCK BAJO
+    */
+
+    const articulosStock =
+      await this.prisma.articulos.findMany({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    const stock_bajo =
+      articulosStock.filter(
+
+        (a) =>
+
+          Number(a.stock_actual) <=
+          Number(a.stock_minimo),
+
+      ).length;
+
+    /*
+    ORDENES
+    */
+
+    const ordenes =
+      await this.prisma.ordenes_compra.count({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    /*
+    ORDENES APROBADAS
+    */
+
+    const ordenes_aprobadas =
+      await this.prisma.ordenes_compra.count({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          estado: 'APROBADA',
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    /*
+    VENTAS
+    */
+
+    const ventas =
+      await this.prisma.ordenes_compra.aggregate({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          estado: 'APROBADA',
+
+          deleted_at: null,
+
+        },
+
+        _sum: {
+
+          total: true,
+
+        },
+
+      });
+
+    return {
+
+      clientes,
+
+      articulos,
+
+      stock_bajo,
+
+      ordenes,
+
+      ordenes_aprobadas,
+
+      ventas_totales:
+        ventas._sum.total || 0,
+
+    };
+
+  }
+
+  /*
+  ==================================================
+  ORDENES RECIENTES
+  ==================================================
+  */
+
+  async recentOrders(
+    id_empresa: string,
+  ) {
+
+    return this.prisma.ordenes_compra.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+      include: {
+
+        clientes: {
+
+          select: {
+
+            nombre: true,
+            apellido: true,
+            razon_social: true,
+
+          },
+
+        },
+
+      },
+
+      orderBy: {
+
+        fecha: 'desc',
+
+      },
+
+      take: 10,
+
+    });
+
+  }
+
+  /*
+  ==================================================
+  VENTAS POR MES
+  ==================================================
+  */
+
+  async salesByMonth(
+    id_empresa: string,
+  ) {
+
+    const ordenes =
+      await this.prisma.ordenes_compra.findMany({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          estado: 'APROBADA',
+
+          deleted_at: null,
+
+        },
+
+        select: {
+
+          fecha: true,
+          total: true,
+
+        },
+
+      });
+
+    /*
+    AGRUPAR
+    */
+
+    const resumen: any = {};
+
+    for (const orden of ordenes) {
+
+      if (!orden.fecha) continue;
+
+      const fecha =
+        new Date(orden.fecha);
+
+      const mes =
+
+        `${fecha.getFullYear()}-${String(
+          fecha.getMonth() + 1,
+        ).padStart(2, '0')}`;
+
+      if (!resumen[mes]) {
+
+        resumen[mes] = 0;
+
+      }
+
+      resumen[mes] +=
+        Number(orden.total);
+
+    }
+
+    /*
+    FORMATEAR
+    */
+
+    return Object.keys(resumen).map(
+
+      (mes) => ({
+
+        mes,
+
+        ventas:
+          resumen[mes],
+
+      }),
+
+    );
+
+  }
+
+}

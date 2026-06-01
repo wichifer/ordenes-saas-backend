@@ -6,20 +6,17 @@ import { ClientsService } from './clients.service';
 
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { AuthModule } from '../auth/auth.module';
+
 @Module({
-
   imports: [
-
     PrismaModule,
-
-    JwtModule,
-
+    AuthModule,
   ],
 
   controllers: [ClientsController],
 
   providers: [ClientsService],
-
 })
-
 export class ClientsModule {}
+

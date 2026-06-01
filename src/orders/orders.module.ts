@@ -9,11 +9,11 @@ from './orders.service';
 import { PrismaModule }
 from '../prisma/prisma.module';
 
-import { JwtModule }
-from '@nestjs/jwt';
+import { AuthModule }
+from '../auth/auth.module';
 
-import { JwtGuard }
-from '../auth/guards/jwt.guard';
+import { AuditModule }
+from '../audit/audit.module';
 
 @Module({
 
@@ -21,26 +21,19 @@ from '../auth/guards/jwt.guard';
 
     PrismaModule,
 
-    JwtModule.register({
+    AuthModule,
 
-      secret: process.env.JWT_SECRET,
+    AuditModule,
 
-      signOptions: {
-        expiresIn: '1d',
-      },
-
-    }),
-
-    
   ],
 
-  controllers: [OrdersController],
+  controllers: [
+    OrdersController,
+  ],
 
   providers: [
 
     OrdersService,
-
-    JwtGuard,
 
   ],
 

@@ -1,26 +1,19 @@
 import {
-
   Injectable,
-
   NotFoundException,
-
   BadRequestException,
-
 } from '@nestjs/common';
 
-import { PrismaService }
-
-from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
-
 export class PaymentsService {
 
   constructor(
-
     private prisma: PrismaService,
-
+    private auditService: AuditService,
   ) {}
 
   async findAll(id_empresa: string) {
@@ -29,8 +22,7 @@ export class PaymentsService {
 
       where: {
 
-        id_empresa:
-          BigInt(id_empresa),
+        id_empresa: BigInt(id_empresa),
 
         deleted_at: null,
 
@@ -54,43 +46,37 @@ export class PaymentsService {
 
   }
 
-async create(
-  data: CreatePaymentDto,
-  user: any,
-) {
+  async create(
+    data: CreatePaymentDto,
+    user: any,
+  ) {
 
-const orden =
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
 
-  await this.prisma.ordenes_compra.findFirst({
+        where: {
 
-    where: {
+          id_orden_compra:
+            BigInt(data.id_orden_compra),
 
-      id_orden_compra:
-        BigInt(data.id_orden_compra),
+          id_empresa:
+            BigInt(user.empresa),
 
-      id_empresa:
-        BigInt(user.empresa),
+          deleted_at: null,
 
-      deleted_at: null,
+        },
 
-    },
+      });
 
-  });
+    if (!orden) {
 
-if (!orden) {
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
 
-  throw new NotFoundException(
-    'Orden no encontrada',
-  );
-
-}
- 
-    /*
-      PAGOS EXISTENTES
-    */
+    }
 
     const pagos =
-
       await this.prisma.pagos.findMany({
 
         where: {
@@ -104,78 +90,81 @@ if (!orden) {
 
       });
 
-    /*
-      TOTAL PAGADO
-    */
-
     const totalPagado =
-
       pagos.reduce(
 
         (acc, pago) =>
-
           acc + Number(pago.monto),
 
         0,
 
       );
 
-    /*
-      SALDO
-    */
-
     const saldo =
-
       Number(orden.total) -
       totalPagado;
 
-    /*
-      VALIDAR MONTO
-    */
-
     if (
-
       Number(data.monto) > saldo
-
     ) {
 
       throw new BadRequestException(
-
         `El pago supera el saldo pendiente (${saldo})`,
-
       );
 
     }
 
-    /*
-      CREAR PAGO
-    */
+    const pago =
+      await this.prisma.pagos.create({
 
-    return this.prisma.pagos.create({
+        data: {
+
+          id_empresa:
+            BigInt(user.empresa),
+
+          id_orden_compra:
+            BigInt(data.id_orden_compra),
+
+          id_cliente:
+            BigInt(data.id_cliente),
+
+          monto:
+            Number(data.monto),
+
+          metodo_pago:
+            data.metodo_pago,
+
+          observaciones:
+            data.observaciones,
+
+        },
+
+      });
+
+    await this.prisma.cliente_movimientos.create({
 
       data: {
 
         id_empresa:
-          BigInt(user.empresa),
-
-        id_orden_compra:
-          BigInt(data.id_orden_compra),
+          pago.id_empresa,
 
         id_cliente:
-          BigInt(data.id_cliente),
+          pago.id_cliente,
+
+        tipo_movimiento:
+          'PAGO',
 
         monto:
-          Number(data.monto),
+          pago.monto,
 
-        metodo_pago:
-          data.metodo_pago,
-
-        observaciones:
-          data.observaciones,
+        observacion:
+          `Pago #${pago.id_pago}`,
 
       },
 
     });
+
+    return pago;
 
   }
 

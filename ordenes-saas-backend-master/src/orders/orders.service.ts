@@ -1,0 +1,675 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+
+import { PrismaService } from '../prisma/prisma.service';
+
+import { CreateOrderDto }
+from './dto/create-order.dto';
+
+import { UpdateOrderDto }
+from './dto/update-order.dto';
+
+@Injectable()
+
+export class OrdersService {
+
+  constructor(
+    private prisma: PrismaService,
+  ) {}
+
+  /*
+  ==================================================
+  LISTAR ORDENES
+  ==================================================
+  */
+
+  async findAll(id_empresa: string) {
+
+    return this.prisma.ordenes_compra.findMany({
+
+      where: {
+        id_empresa: BigInt(id_empresa),
+        deleted_at: null,
+      },
+
+      include: {
+
+        clientes: true,
+
+        usuarios: {
+
+          select: {
+
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            email: true,
+
+          },
+
+        },
+
+      },
+
+      orderBy: {
+        id_orden_compra: 'desc',
+      },
+
+    });
+
+  }
+
+  /*
+  ==================================================
+  OBTENER UNA ORDEN
+  ==================================================
+  */
+
+  async findOne(
+    id: string,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+        include: {
+
+          clientes: true,
+
+          usuarios: {
+
+            select: {
+
+              id_usuario: true,
+              nombre: true,
+              apellido: true,
+              email: true,
+
+            },
+
+          },
+
+          detalle_orden_compra: {
+
+            include: {
+
+              articulos: true,
+
+            },
+
+          },
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+
+    }
+
+    return orden;
+
+  }
+
+  /*
+  ==================================================
+  CREAR ORDEN
+  ==================================================
+  */
+
+  async create(
+    body: CreateOrderDto,
+    user: any,
+  ) {
+
+    /*
+    VALIDAR ITEMS
+    */
+
+    if (
+      !body.items ||
+      !Array.isArray(body.items)
+    ) {
+
+      throw new BadRequestException(
+        'Items requeridos',
+      );
+
+    }
+
+    /*
+    CALCULAR SUBTOTALES
+    */
+
+    const items = body.items.map((item: any) => {
+
+      const subtotal =
+        Number(item.cantidad) *
+        Number(item.precio_unitario);
+
+      return {
+
+        ...item,
+
+        subtotal,
+
+      };
+
+    });
+
+    /*
+    TOTAL
+    */
+
+    const total = items.reduce(
+
+      (acc: number, item: any) => {
+        return acc + item.subtotal;
+      },
+
+      0,
+
+    );
+
+    /*
+    CREAR ORDEN
+    */
+
+    const orden =
+      await this.prisma.ordenes_compra.create({
+
+        data: {
+
+          id_empresa:
+            BigInt(user.empresa),
+
+          id_cliente:
+            BigInt(body.id_cliente),
+
+          id_usuario:
+            BigInt(user.sub),
+
+          numero_orden:
+            body.numero_orden,
+
+          observaciones:
+            body.observaciones,
+
+          total,
+
+        },
+
+      });
+
+    /*
+    CREAR DETALLES
+    */
+
+    await this.prisma.detalle_orden_compra.createMany({
+
+      data: items.map((item: any) => ({
+
+        id_orden_compra:
+          orden.id_orden_compra,
+
+        id_articulo:
+          BigInt(item.id_articulo),
+
+        descripcion_articulo:
+          item.descripcion_articulo,
+
+        cantidad:
+          item.cantidad,
+
+        precio_unitario:
+          item.precio_unitario,
+
+        subtotal:
+          item.subtotal,
+
+      })),
+
+    });
+
+    /*
+    RETORNAR ORDEN COMPLETA
+    */
+
+    return this.findOne(
+      orden.id_orden_compra.toString(),
+      user.empresa,
+    );
+
+  }
+
+  /*
+  ==================================================
+  ELIMINAR ORDEN
+  ==================================================
+  */
+
+  async remove(
+    id: string,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+
+    }
+
+    await this.prisma.ordenes_compra.update({
+
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
+
+      data: {
+        deleted_at: new Date(),
+      },
+
+    });
+
+    return {
+      message: 'Orden eliminada',
+    };
+
+  }
+
+  /*
+  ==================================================
+  ACTUALIZAR ORDEN
+  ==================================================
+  */
+
+  async update(
+    id: string,
+    data: UpdateOrderDto,
+    id_empresa: string,
+  ) {
+
+    const orden =
+      await this.prisma.ordenes_compra.findFirst({
+
+        where: {
+
+          id_orden_compra: BigInt(id),
+
+          id_empresa: BigInt(id_empresa),
+
+          deleted_at: null,
+
+        },
+
+      });
+
+    if (!orden) {
+
+      throw new NotFoundException(
+        'Orden no encontrada',
+      );
+    
+    }
+if (orden.estado === 'ENTREGADA') {
+
+  throw new BadRequestException(
+    'La orden ya fue entregada',
+  );
+
+}
+if (orden.estado === 'CANCELADA') {
+
+  throw new BadRequestException(
+    'La orden está cancelada',
+  );
+
+}
+    /*
+    ==================================================
+    DESCONTAR STOCK SI PASA A APROBADA
+    ==================================================
+    */
+
+    if (
+
+      orden.estado !== 'APROBADA' &&
+      data.estado === 'APROBADA'
+
+    ) {
+
+      const detalles =
+        await this.prisma.detalle_orden_compra.findMany({
+
+          where: {
+
+            id_orden_compra:
+              orden.id_orden_compra,
+
+          },
+
+        });
+
+      await this.prisma.$transaction(
+
+        async (tx) => {
+
+          for (const item of detalles) {
+
+            const articulo =
+              await tx.articulos.findFirst({
+
+                where: {
+
+                  id_articulo:
+                    item.id_articulo,
+
+                  id_empresa:
+                    BigInt(id_empresa),
+
+                  deleted_at: null,
+
+                },
+
+              });
+
+            if (!articulo) {
+
+              throw new NotFoundException(
+
+                `Artículo ${item.descripcion_articulo} no encontrado`,
+
+              );
+
+            }
+
+            /*
+            VALIDAR STOCK
+            */
+
+            if (
+
+              Number(articulo.stock_actual) <
+              Number(item.cantidad)
+
+            ) {
+
+              throw new BadRequestException(
+
+                `Stock insuficiente para ${item.descripcion_articulo}`,
+
+              );
+
+            }
+
+            /*
+            DESCONTAR STOCK
+            */
+
+            const nuevoStock =
+
+              Number(articulo.stock_actual) -
+              Number(item.cantidad);
+
+            await tx.articulos.update({
+
+              where: {
+                id_articulo:
+                  articulo.id_articulo,
+              },
+
+              data: {
+                stock_actual: nuevoStock,
+              },
+
+            });
+
+            /*
+            MOVIMIENTO STOCK
+            */
+
+            await tx.stock_movimientos.create({
+
+              data: {
+
+                id_empresa:
+                  BigInt(id_empresa),
+
+                id_articulo:
+                  articulo.id_articulo,
+
+                tipo_movimiento:
+                  'SALIDA',
+
+                cantidad:
+                  item.cantidad,
+
+                referencia:
+                  orden.numero_orden,
+
+              },
+
+            });
+
+          }
+
+          /*
+          ACTUALIZAR ORDEN
+          */
+
+          await tx.ordenes_compra.update({
+
+            where: {
+
+              id_orden_compra:
+                orden.id_orden_compra,
+
+            },
+
+            data: {
+
+              estado:
+                data.estado,
+
+              observaciones:
+                data.observaciones,
+
+            },
+
+          });
+
+        },
+
+      );
+
+      return this.findOne(
+        id,
+        id_empresa,
+      );
+
+    }
+  if (
+  orden.estado === 'APROBADA' &&
+  data.estado === 'CANCELADA'
+) {
+
+  const detalles =
+    await this.prisma.detalle_orden_compra.findMany({
+
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
+
+    });
+
+  await this.prisma.$transaction(
+
+    async (tx) => {
+
+      for (const item of detalles) {
+
+        const articulo =
+          await tx.articulos.findFirst({
+
+            where: {
+              id_articulo: item.id_articulo,
+            },
+
+          });
+
+        if (!articulo) continue;
+
+        /*
+        DEVOLVER STOCK
+        */
+
+        const nuevoStock =
+
+          Number(articulo.stock_actual) +
+          Number(item.cantidad);
+
+        await tx.articulos.update({
+
+          where: {
+            id_articulo:
+              articulo.id_articulo,
+          },
+
+          data: {
+            stock_actual: nuevoStock,
+          },
+
+        });
+
+        /*
+        MOVIMIENTO STOCK
+        */
+
+        await tx.stock_movimientos.create({
+
+          data: {
+
+            id_empresa:
+              BigInt(id_empresa),
+
+            id_articulo:
+              articulo.id_articulo,
+
+            tipo_movimiento:
+              'ENTRADA',
+
+            cantidad:
+              item.cantidad,
+
+            referencia:
+              orden.numero_orden,
+
+          },
+
+        });
+
+      }
+
+      /*
+      ACTUALIZAR ORDEN
+      */
+
+      await tx.ordenes_compra.update({
+
+        where: {
+          id_orden_compra:
+            orden.id_orden_compra,
+        },
+
+        data: {
+
+          estado:
+            data.estado,
+
+          observaciones:
+            data.observaciones,
+
+        },
+
+      });
+
+    },
+
+  );
+
+  return this.findOne(
+    id,
+    id_empresa,
+  );
+
+}
+    /*
+    ==================================================
+    ACTUALIZAR NORMAL
+    ==================================================
+    */
+
+    await this.prisma.ordenes_compra.update({
+
+      where: {
+        id_orden_compra:
+          orden.id_orden_compra,
+      },
+
+      data: {
+
+        estado:
+          data.estado,
+
+        observaciones:
+          data.observaciones,
+
+      },
+
+    });
+
+    return this.findOne(
+      id,
+      id_empresa,
+    );
+
+  }
+
+}

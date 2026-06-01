@@ -12,12 +12,16 @@ from './dto/create-order.dto';
 import { UpdateOrderDto }
 from './dto/update-order.dto';
 
+import { AuditService }
+from '../audit/audit.service';
+
 @Injectable()
 
 export class OrdersService {
 
   constructor(
     private prisma: PrismaService,
+    private auditService: AuditService,
   ) {}
 
   /*
@@ -218,7 +222,15 @@ export class OrdersService {
         },
 
       });
-
+await this.prisma.cliente_movimientos.create({
+  data: {
+    id_empresa: BigInt(user.empresa),
+    id_cliente: BigInt(body.id_cliente),
+    tipo_movimiento: 'VENTA',
+    monto: total,
+    observacion: `Orden #${orden.numero_orden}`,
+  },
+});
     /*
     CREAR DETALLES
     */
@@ -252,7 +264,24 @@ export class OrdersService {
     /*
     RETORNAR ORDEN COMPLETA
     */
+await this.auditService.createLog({
 
+  id_empresa:
+    user.empresa,
+
+  id_usuario:
+    user.sub,
+
+  tabla_afectada:
+    'ordenes_compra',
+
+  accion:
+    'CREAR',
+
+  registro_id:
+    orden.id_orden_compra.toString(),
+
+});
     return this.findOne(
       orden.id_orden_compra.toString(),
       user.empresa,
@@ -606,7 +635,19 @@ if (orden.estado === 'CANCELADA') {
         });
 
       }
+await tx.cliente_movimientos.create({
+  data: {
+    id_empresa: BigInt(id_empresa),
+    id_cliente: orden.id_cliente,
 
+    tipo_movimiento: 'NOTA_CREDITO',
+
+    monto: orden.total,
+
+    observacion:
+      `Cancelación ${orden.numero_orden}`,
+  },
+});
       /*
       ACTUALIZAR ORDEN
       */

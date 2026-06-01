@@ -9,27 +9,14 @@ from './articles.service';
 import { PrismaModule }
 from '../prisma/prisma.module';
 
-import { JwtModule }
-from '@nestjs/jwt';
-
-import { JwtGuard }
-from '../auth/guards/jwt.guard';
-
+import { AuthModule } from '../auth/auth.module';
 @Module({
 
   imports: [
 
     PrismaModule,
 
-    JwtModule.register({
-
-      secret: process.env.JWT_SECRET,
-
-      signOptions: {
-        expiresIn: '1d',
-      },
-
-    }),
+  AuthModule,
 
   ],
 
@@ -40,8 +27,6 @@ from '../auth/guards/jwt.guard';
   providers: [
 
     ArticlesService,
-
-    JwtGuard,
 
   ],
 

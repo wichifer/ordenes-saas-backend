@@ -56,7 +56,24 @@ export class ClientsController {
     );
 
   }
+@Get(':id/saldo')
+getBalance(
 
+  @Param('id') id: string,
+
+  @Req() request: any,
+
+) {
+
+  return this.clientsService.getBalance(
+
+    id,
+
+    request.user.empresa,
+
+  );
+
+}
   @Post()
   create(
 
@@ -107,5 +124,22 @@ export class ClientsController {
     );
 
   }
+@Get(':id/movimientos')
+getMovimientos(
 
+  @Param('id') id: string,
+
+  @Req() request: any,
+
+) {
+
+  return this.clientsService.getMovimientos(
+
+    id,
+
+    request.user.empresa,
+
+  );
+
+}
 }
