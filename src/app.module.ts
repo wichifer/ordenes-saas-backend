@@ -20,6 +20,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AuditModule } from './audit/audit.module';
 import { ConfigModule } from '@nestjs/config';
+import { ReportsModule } from './reports/reports.module';
 
 
 @Module({
@@ -42,6 +43,7 @@ import { ConfigModule } from '@nestjs/config';
   PaymentsModule,
   DashboardModule,
   AuditModule,
+  ReportsModule,
 
 ],
   controllers: [AppController],

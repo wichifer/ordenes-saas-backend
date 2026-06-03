@@ -432,4 +432,70 @@ async getMovimientos(
   });
 
 }
+async accountStatement(
+  id: string,
+  id_empresa: string,
+) {
+
+  const cliente =
+    await this.findOne(
+      id,
+      id_empresa,
+    );
+
+  const movimientos =
+    await this.prisma.cliente_movimientos.findMany({
+
+      where: {
+
+        id_cliente:
+          BigInt(id),
+
+        id_empresa:
+          BigInt(id_empresa),
+
+      },
+
+      orderBy: {
+
+        created_at: 'asc',
+
+      },
+
+    });
+
+  let debe = 0;
+  let pagado = 0;
+
+  for (const mov of movimientos) {
+
+    const monto =
+      Number(mov.monto);
+
+    switch (mov.tipo_movimiento) {
+
+      case 'VENTA':
+        debe += monto;
+        break;
+
+      case 'PAGO':
+      case 'NOTA_CREDITO':
+        pagado += monto;
+        break;
+
+    }
+
+  }
+
+  return {
+
+    cliente,
+
+    saldo: debe - pagado,
+
+    movimientos,
+
+  };
+
+}
 }

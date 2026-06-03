@@ -142,4 +142,16 @@ getMovimientos(
   );
 
 }
+@Get(':id/account-statement')
+accountStatement(
+  @Param('id') id: string,
+  @Req() request: any,
+) {
+
+  return this.clientsService.accountStatement(
+    id,
+    request.user.empresa,
+  );
+
+}
 }

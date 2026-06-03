@@ -21,6 +21,26 @@ export class DashboardController {
     private readonly dashboardService:
       DashboardService,
   ) {}
+  @Get('executive')
+executive(
+  @Req() request: any,
+) {
+
+  return this.dashboardService.executive(
+    request.user.empresa,
+  );
+
+}
+  @Get('alerts')
+alerts(
+  @Req() request: any,
+) {
+
+  return this.dashboardService.alerts(
+    request.user.empresa,
+  );
+
+}
 
   /*
   ==================================================

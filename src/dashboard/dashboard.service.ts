@@ -391,4 +391,238 @@ export class DashboardService {
     );
 
   }
+  async alerts(
+  id_empresa: string,
+) {
+
+  /*
+  STOCK BAJO
+  */
+
+  const articulos =
+    await this.prisma.articulos.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  const stock_bajo =
+    articulos.filter(
+
+      (a) =>
+
+        Number(a.stock_actual) <=
+        Number(a.stock_minimo),
+
+    ).length;
+
+  /*
+  CLIENTES DEUDORES
+  */
+
+  const clientes =
+    await this.prisma.clientes.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  let clientes_deudores = 0;
+
+  let saldo_total_clientes = 0;
+
+  for (const cliente of clientes) {
+
+    const movimientos =
+      await this.prisma.cliente_movimientos.findMany({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          id_cliente:
+            cliente.id_cliente,
+
+        },
+
+      });
+
+    let debe = 0;
+    let pagado = 0;
+
+    for (const mov of movimientos) {
+
+      const monto =
+        Number(mov.monto);
+
+      switch (mov.tipo_movimiento) {
+
+        case 'VENTA':
+          debe += monto;
+          break;
+
+        case 'PAGO':
+        case 'NOTA_CREDITO':
+          pagado += monto;
+          break;
+      }
+    }
+
+    const saldo =
+      debe - pagado;
+
+    if (saldo > 0) {
+
+      clientes_deudores++;
+
+      saldo_total_clientes += saldo;
+
+    }
+
+  }
+
+  return {
+
+    stock_bajo,
+
+    clientes_deudores,
+
+    saldo_total_clientes,
+
+  };
+
+}
+async executive(
+  id_empresa: string,
+) {
+
+  /*
+  STOCK BAJO
+  */
+
+  const articulos =
+    await this.prisma.articulos.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  const stock_bajo =
+    articulos.filter(
+
+      (a) =>
+
+        Number(a.stock_actual) <=
+        Number(a.stock_minimo),
+
+    ).length;
+
+  /*
+  CLIENTES DEUDORES
+  */
+
+  const clientes =
+    await this.prisma.clientes.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        deleted_at: null,
+
+      },
+
+    });
+
+  let clientes_deudores = 0;
+
+  let saldo_total_clientes = 0;
+
+  for (const cliente of clientes) {
+
+    const movimientos =
+      await this.prisma.cliente_movimientos.findMany({
+
+        where: {
+
+          id_empresa:
+            BigInt(id_empresa),
+
+          id_cliente:
+            cliente.id_cliente,
+
+        },
+
+      });
+
+    let debe = 0;
+    let pagado = 0;
+
+    for (const mov of movimientos) {
+
+      const monto =
+        Number(mov.monto);
+
+      switch (mov.tipo_movimiento) {
+
+        case 'VENTA':
+          debe += monto;
+          break;
+
+        case 'PAGO':
+        case 'NOTA_CREDITO':
+          pagado += monto;
+          break;
+
+      }
+
+    }
+
+    const saldo =
+      debe - pagado;
+
+    if (saldo > 0) {
+
+      clientes_deudores++;
+
+      saldo_total_clientes += saldo;
+
+    }
+
+  }
+
+  return {
+
+    stock_bajo,
+
+    clientes_deudores,
+
+    saldo_total_clientes,
+
+  };
+
+}
 }
