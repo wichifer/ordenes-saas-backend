@@ -143,7 +143,7 @@ export class OrdersService {
     body: CreateOrderDto,
     user: any,
   ) {
-
+let numeroOrden = 'OC-0001';
     const ultimaOrden =
   await this.prisma.ordenes_compra.findFirst({
 
@@ -156,7 +156,7 @@ export class OrdersService {
     },
 
   });
-  let numeroOrden = 'OC-0001';
+  
 
 if (ultimaOrden) {
 

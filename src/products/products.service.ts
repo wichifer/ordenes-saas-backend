@@ -254,5 +254,54 @@ if (data.codigo) {
     };
 
   }
+async lowStock(
+  id_empresa: string,
+) {
+  // inicio codigo log temporal
+const articulos =
+  await this.prisma.articulos.findMany({
+    where: {
+      id_empresa: BigInt(id_empresa),
+      deleted_at: null,
+    },
+  });
 
+console.log(articulos);
+
+return articulos.filter(
+  (a) =>
+    Number(a.stock_actual) <=
+    Number(a.stock_minimo),
+);
+// fin codigo log temporal
+  return this.prisma.articulos.findMany({
+
+    where: {
+
+      id_empresa: BigInt(id_empresa),
+
+      deleted_at: null,
+
+    },
+
+    orderBy: {
+
+      descripcion: 'asc',
+
+    },
+
+  }).then((articulos) =>
+
+    articulos.filter(
+
+      (a) =>
+
+        Number(a.stock_actual) <=
+        Number(a.stock_minimo),
+
+    ),
+
+  );
+
+}
 }

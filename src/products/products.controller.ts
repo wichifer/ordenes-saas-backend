@@ -40,7 +40,16 @@ export class ProductsController {
     );
 
   }
+@Get('low-stock')
+lowStock(
+  @Req() request: any,
+) {
 
+  return this.productsService.lowStock(
+    request.user.empresa,
+  );
+
+}
   @Get(':id')
   findOne(
 
