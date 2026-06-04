@@ -55,15 +55,52 @@ export class ReportsController {
 
   }
 
-  @Get('sales-by-client')
-  salesByClient(
-    @Req() request: any,
-  ) {
+@Get('sales-by-client')
+salesByClient(
 
-    return this.reportsService.salesByClient(
-      request.user.empresa,
-    );
+  @Req() request: any,
 
-  }
+  @Query('from')
+  from?: string,
 
+  @Query('to')
+  to?: string,
+
+) {
+
+  return this.reportsService.salesByClient(
+
+    request.user.empresa,
+
+    from,
+
+    to,
+
+  );
+
+}
+@Get('top-products')
+topProducts(
+
+  @Req() request: any,
+
+  @Query('from')
+  from?: string,
+
+  @Query('to')
+  to?: string,
+
+) {
+
+  return this.reportsService.topProducts(
+
+    request.user.empresa,
+
+    from,
+
+    to,
+
+  );
+
+}
 }

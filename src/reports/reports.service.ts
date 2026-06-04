@@ -106,6 +106,8 @@ const resultado: any[] = [];
   }
 async salesByClient(
   id_empresa: string,
+  from?: string,
+  to?: string,
 ) {
 
   const clientes =
@@ -113,7 +115,8 @@ async salesByClient(
 
       where: {
 
-        id_empresa: BigInt(id_empresa),
+        id_empresa:
+          BigInt(id_empresa),
 
         deleted_at: null,
 
@@ -125,20 +128,54 @@ async salesByClient(
 
   for (const cliente of clientes) {
 
+    const whereOrden: any = {
+
+      id_empresa:
+        BigInt(id_empresa),
+
+      id_cliente:
+        cliente.id_cliente,
+
+      estado: 'APROBADA',
+
+      deleted_at: null,
+
+    };
+
+    if (from || to) {
+
+      whereOrden.fecha = {};
+
+      if (from) {
+
+        whereOrden.fecha.gte =
+          new Date(from);
+
+      }
+
+      if (to) {
+
+        const fechaFin =
+          new Date(to);
+
+        fechaFin.setHours(
+          23,
+          59,
+          59,
+          999,
+        );
+
+        whereOrden.fecha.lte =
+          fechaFin;
+
+      }
+
+    }
+
     const ventas =
       await this.prisma.ordenes_compra.aggregate({
 
-        where: {
-
-          id_empresa: BigInt(id_empresa),
-
-          id_cliente: cliente.id_cliente,
-
-          estado: 'APROBADA',
-
-          deleted_at: null,
-
-        },
+        where: whereOrden,
 
         _sum: {
 
@@ -172,13 +209,19 @@ async salesByClient(
 
   }
 
-  return resultado.sort(
+  return resultado
 
-    (a, b) =>
+    .filter(
+      (c) => c.ventas > 0,
+    )
 
-      b.ventas - a.ventas,
+    .sort(
 
-  );
+      (a, b) =>
+
+        b.ventas - a.ventas,
+
+    );
 
 }
 async sales(
@@ -227,6 +270,12 @@ async sales(
     }
 
   }
+//
+console.log('FROM:', from);
+console.log('TO:', to);
+
+console.log('WHERE:', where);
+//
 
   const ordenes =
     await this.prisma.ordenes_compra.findMany({
@@ -266,6 +315,117 @@ async sales(
       clientes.size,
 
   };
+
+}
+async topProducts(
+  id_empresa: string,
+  from?: string,
+  to?: string,
+) {
+
+  const whereOrden: any = {
+
+    id_empresa:
+      BigInt(id_empresa),
+
+    estado: 'APROBADA',
+
+    deleted_at: null,
+
+  };
+
+if (from || to) {
+
+  whereOrden.fecha = {};
+
+  if (
+    from &&
+    !isNaN(new Date(from).getTime())
+  ) {
+
+    whereOrden.fecha.gte =
+      new Date(from);
+
+  }
+
+  if (
+    to &&
+    !isNaN(new Date(to).getTime())
+  ) {
+
+    const fechaFin =
+      new Date(to);
+
+    fechaFin.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    whereOrden.fecha.lte =
+      fechaFin;
+
+  }
+
+}
+
+const detalles =
+  await this.prisma.detalle_orden_compra.findMany({
+
+    where: {
+
+      ordenes_compra: {
+
+        is: whereOrden,
+
+      },
+
+    },
+
+  });
+
+  const productos: Record<
+    string,
+    {
+      descripcion_articulo: string;
+      cantidad_vendida: number;
+    }
+  > = {};
+
+  for (const item of detalles) {
+
+    const key =
+      item.id_articulo.toString();
+
+    if (!productos[key]) {
+
+      productos[key] = {
+
+        descripcion_articulo:
+          item.descripcion_articulo,
+
+        cantidad_vendida: 0,
+
+      };
+
+    }
+
+    productos[key].cantidad_vendida +=
+      Number(item.cantidad);
+
+  }
+
+  return Object.values(productos)
+
+    .sort(
+
+      (a, b) =>
+
+        b.cantidad_vendida -
+        a.cantidad_vendida,
+
+    );
 
 }
 }

@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 import { PrismaModule } from '../prisma/prisma.module';
-import { AuditModule } from '../audit/audit.module';
+
 
 console.log(
   'JWT SECRET =>',
@@ -14,7 +14,7 @@ console.log(
 
 @Module({
   imports: [
-    AuditModule,
+    
 
     PrismaModule,
 

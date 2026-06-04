@@ -14,7 +14,7 @@ export class AuthService {
 
   constructor(
     private prisma: PrismaService,
-    private auditService: AuditService,
+    //private auditService: AuditService,
     private jwtService: JwtService,
   ) {}
 

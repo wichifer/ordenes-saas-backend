@@ -11,6 +11,67 @@ export class AuditService {
     private prisma: PrismaService,
   ) {}
 
+  async findAll(
+  id_empresa: string,
+  tabla?: string,
+  accion?: string,
+) {
+const where: any = {
+
+  id_empresa:
+    BigInt(id_empresa),
+
+};
+
+if (tabla) {
+
+  where.tabla_afectada =
+    tabla;
+
+}
+
+if (accion) {
+
+  where.accion =
+    accion;
+
+}
+return this.prisma.auditoria_logs.findMany({
+
+  where,
+
+    include: {
+
+      usuarios: {
+
+        select: {
+
+          id_usuario: true,
+
+          nombre: true,
+
+          apellido: true,
+
+          email: true,
+
+        },
+
+      },
+
+    },
+
+    orderBy: {
+
+      fecha: 'desc',
+
+    },
+
+    take: 100,
+
+  });
+
+}
+
   async createLog(
 
     data: {
