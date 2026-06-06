@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../nodejs/project99/src"
+		},
+		{
+			"name": "ordenes-saas-backend",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
