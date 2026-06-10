@@ -11,9 +11,6 @@ export class CreatePaymentDto {
   @IsNumberString()
   id_orden_compra: string;
 
-  @IsNotEmpty()
-  @IsNumberString()
-  id_cliente: string;
 
   @IsNotEmpty()
   @IsNumberString()

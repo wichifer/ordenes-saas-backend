@@ -51,30 +51,17 @@ export class PaymentsService {
     user: any,
   ) {
 
-    const orden =
-      await this.prisma.ordenes_compra.findFirst({
+    const orden = await this.prisma.ordenes_compra.findUnique({
+  where: {
+    id_orden_compra: BigInt(data.id_orden_compra),
+  },
+});
 
-        where: {
+if (!orden) {
+  throw new Error('Orden no encontrada');
+}
 
-          id_orden_compra:
-            BigInt(data.id_orden_compra),
-
-          id_empresa:
-            BigInt(user.empresa),
-
-          deleted_at: null,
-
-        },
-
-      });
-
-    if (!orden) {
-
-      throw new NotFoundException(
-        'Orden no encontrada',
-      );
-
-    }
+const idCliente = orden.id_cliente;
 
     const pagos =
       await this.prisma.pagos.findMany({
@@ -126,7 +113,7 @@ export class PaymentsService {
             BigInt(data.id_orden_compra),
 
           id_cliente:
-            BigInt(data.id_cliente),
+            idCliente,
 
           monto:
             Number(data.monto),
