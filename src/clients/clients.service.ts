@@ -20,7 +20,23 @@ export class ClientsService {
   constructor(
     private prisma: PrismaService,
   ) {}
+async getConsumidorFinal(idEmpresa: bigint) {
+  const cliente = await this.prisma.clientes.findFirst({
+    where: {
+      id_empresa: idEmpresa,
+      es_consumidor_final: true,
+      deleted_at: null,
+    },
+  });
 
+  if (!cliente) {
+    throw new NotFoundException(
+      'No existe un cliente Consumidor Final para esta empresa',
+    );
+  }
+
+  return cliente;
+}
   async findAll(id_empresa: string) {
 
     return this.prisma.clientes.findMany({
@@ -187,32 +203,22 @@ async getBalance(
 
     }
 
-   return this.prisma.clientes.create({
-
+ return this.prisma.clientes.create({
   data: {
-
     id_empresa: BigInt(user.empresa),
-
     nombre: data.nombre || '',
-
     apellido: data.apellido,
-
     razon_social: data.razon_social,
-
     documento: data.documento,
-
     cuit: data.cuit,
-
     telefono: data.telefono,
-
     email: data.email,
-
     direccion: data.direccion,
-
     estado: true,
 
+    // El backend fija este valor
+    es_consumidor_final: false,
   },
-
 });
   }
 
@@ -244,7 +250,11 @@ async getBalance(
       );
 
     }
-
+if (client.es_consumidor_final) {
+  throw new BadRequestException(
+    'No se puede modificar el cliente Consumidor Final',
+  );
+}
     if (data.email) {
 
       const existingEmail =
@@ -385,6 +395,11 @@ async getBalance(
       );
 
     }
+    if (client.es_consumidor_final) {
+  throw new BadRequestException(
+    'No se puede eliminar el cliente Consumidor Final',
+  );
+}
 
     await this.prisma.clientes.update({
 
@@ -403,6 +418,7 @@ async getBalance(
     };
 
   }
+  
 async getMovimientos(
   id: string,
   id_empresa: string,

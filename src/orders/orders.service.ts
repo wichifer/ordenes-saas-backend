@@ -1,6 +1,6 @@
+import { Injectable } from '@nestjs/common';
 import {
-  Injectable,
-  NotFoundException,
+NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 
@@ -14,16 +14,18 @@ from './dto/update-order.dto';
 
 import { AuditService }
 from '../audit/audit.service';
+//import { OrderIntegrationService } from 'src/modules/integrations/order-integration.service';
 
 @Injectable()
 
 export class OrdersService {
 
-  constructor(
-    private prisma: PrismaService,
-    private auditService: AuditService,
-  ) {}
 
+  constructor(
+  private prisma: PrismaService,
+  private auditService: AuditService,
+
+) {}
   /*
   ==================================================
   LISTAR ORDENES
@@ -121,13 +123,6 @@ export class OrdersService {
 
       });
 
-    if (!orden) {
-
-      throw new NotFoundException(
-        'Orden no encontrada',
-      );
-
-    }
 
     return orden;
 
@@ -219,7 +214,28 @@ if (ultimaOrden) {
       0,
 
     );
+if (total <= 0) {
+  throw new BadRequestException(
+    'La orden debe tener un importe mayor a cero',
+  );
+}
+if (!body.items || body.items.length === 0) {
+  throw new BadRequestException(
+    'La orden debe contener al menos un producto',
+  );
+}for (const item of body.items) {
+  if (Number(item.cantidad) <= 0) {
+    throw new BadRequestException(
+      'La cantidad debe ser mayor a cero',
+    );
+  }
 
+  if (Number(item.precio_unitario) < 0) {
+    throw new BadRequestException(
+      'El precio no puede ser negativo',
+    );
+  }
+}
     /*
     CREAR ORDEN
     */
@@ -248,15 +264,7 @@ if (ultimaOrden) {
         },
 
       });
-await this.prisma.cliente_movimientos.create({
-  data: {
-    id_empresa: BigInt(user.empresa),
-    id_cliente: BigInt(body.id_cliente),
-    tipo_movimiento: 'VENTA',
-    monto: total,
-    observacion: `Orden #${orden.numero_orden}`,
-  },
-});
+
     /*
     CREAR DETALLES
     */
@@ -340,14 +348,10 @@ await this.auditService.createLog({
         },
 
       });
-
     if (!orden) {
-
-      throw new NotFoundException(
-        'Orden no encontrada',
-      );
-
+      throw new NotFoundException('Orden no encontrada');
     }
+
 
     await this.prisma.ordenes_compra.update({
 
@@ -402,20 +406,20 @@ await this.auditService.createLog({
       );
     
     }
-if (orden.estado === 'ENTREGADA') {
+    if (orden.estado === 'ENTREGADA') {
 
-  throw new BadRequestException(
-    'La orden ya fue entregada',
-  );
+      throw new BadRequestException(
+        'La orden ya fue entregada',
+      );
 
-}
-if (orden.estado === 'CANCELADA') {
+    }
+    if (orden.estado === 'ANULADA') {
 
-  throw new BadRequestException(
-    'La orden está cancelada',
-  );
+      throw new BadRequestException(
+        'La orden está anulada',
+      );
 
-}
+    }
     /*
     ==================================================
     DESCONTAR STOCK SI PASA A APROBADA
@@ -429,120 +433,63 @@ if (orden.estado === 'CANCELADA') {
 
     ) {
 
-      const detalles =
-        await this.prisma.detalle_orden_compra.findMany({
-
-          where: {
-
-            id_orden_compra:
-              orden.id_orden_compra,
-
-          },
-
-        });
-
+const detalles =
+  await this.prisma.detalle_orden_compra.findMany({
+    where: {
+      id_orden_compra: orden.id_orden_compra,
+    },
+  });
+    
+    //  return this.findOne(id, id_empresa);  
       await this.prisma.$transaction(
 
         async (tx) => {
 
-          for (const item of detalles) {
+for (const item of detalles) {
 
-            const articulo =
-              await tx.articulos.findFirst({
+  const articulo = await tx.articulos.findFirst({
+    where: {
+      id_articulo: item.id_articulo,
+      id_empresa: BigInt(id_empresa),
+      deleted_at: null,
+    },
+  });
 
-                where: {
+  if (!articulo) {
+    throw new NotFoundException(
+      `Artículo ${item.descripcion_articulo} no encontrado`,
+    );
+  }
 
-                  id_articulo:
-                    item.id_articulo,
+  if (Number(articulo.stock_actual) < Number(item.cantidad)) {
+    throw new BadRequestException(
+      `Stock insuficiente para ${item.descripcion_articulo}`,
+    );
+  }
 
-                  id_empresa:
-                    BigInt(id_empresa),
+  const nuevoStock =
+    Number(articulo.stock_actual) - Number(item.cantidad);
 
-                  deleted_at: null,
+  await tx.articulos.update({
+    where: {
+      id_articulo: articulo.id_articulo,
+    },
+    data: {
+      stock_actual: nuevoStock,
+    },
+  });
 
-                },
+  await tx.stock_movimientos.create({
+    data: {
+      id_empresa: BigInt(id_empresa),
+      id_articulo: articulo.id_articulo,
+      tipo_movimiento: 'SALIDA',
+      cantidad: item.cantidad,
+      referencia: orden.numero_orden,
+    },
+  });
 
-              });
-
-            if (!articulo) {
-
-              throw new NotFoundException(
-
-                `Artículo ${item.descripcion_articulo} no encontrado`,
-
-              );
-
-            }
-
-            /*
-            VALIDAR STOCK
-            */
-
-            if (
-
-              Number(articulo.stock_actual) <
-              Number(item.cantidad)
-
-            ) {
-
-              throw new BadRequestException(
-
-                `Stock insuficiente para ${item.descripcion_articulo}`,
-
-              );
-
-            }
-
-            /*
-            DESCONTAR STOCK
-            */
-
-            const nuevoStock =
-
-              Number(articulo.stock_actual) -
-              Number(item.cantidad);
-
-            await tx.articulos.update({
-
-              where: {
-                id_articulo:
-                  articulo.id_articulo,
-              },
-
-              data: {
-                stock_actual: nuevoStock,
-              },
-
-            });
-
-            /*
-            MOVIMIENTO STOCK
-            */
-
-            await tx.stock_movimientos.create({
-
-              data: {
-
-                id_empresa:
-                  BigInt(id_empresa),
-
-                id_articulo:
-                  articulo.id_articulo,
-
-                tipo_movimiento:
-                  'SALIDA',
-
-                cantidad:
-                  item.cantidad,
-
-                referencia:
-                  orden.numero_orden,
-
-              },
-
-            });
-
-          }
+}
 
           /*
           ACTUALIZAR ORDEN
@@ -568,7 +515,33 @@ if (orden.estado === 'CANCELADA') {
             },
 
           });
+const cliente = await tx.clientes.findUnique({
+  where: {
+    id_cliente: orden.id_cliente,
+  },
+});
 
+if (!cliente?.es_consumidor_final) {
+
+  await tx.cliente_movimientos.create({
+
+    data: {
+
+      id_empresa: orden.id_empresa,
+
+      id_cliente: orden.id_cliente,
+
+      tipo_movimiento: 'VENTA',
+
+      monto: orden.total,
+
+      observacion: `Orden ${orden.numero_orden}`,
+
+    },
+
+  });
+
+}
         },
 
       );
@@ -579,134 +552,135 @@ if (orden.estado === 'CANCELADA') {
       );
 
     }
-  if (
-  orden.estado === 'APROBADA' &&
-  data.estado === 'CANCELADA'
-) {
-
-  const detalles =
-    await this.prisma.detalle_orden_compra.findMany({
-
-      where: {
-        id_orden_compra:
-          orden.id_orden_compra,
-      },
-
-    });
-
-  await this.prisma.$transaction(
-
-    async (tx) => {
-
-      for (const item of detalles) {
-
-        const articulo =
-          await tx.articulos.findFirst({
+    if (
+      orden.estado === 'APROBADA' &&
+      data.estado === 'ANULADA'
+     ) {
+        if (!orden) {
+          throw new NotFoundException('Orden no encontrada');
+        }
+        const detalles =
+          await this.prisma.detalle_orden_compra.findMany({
 
             where: {
-              id_articulo: item.id_articulo,
+              id_orden_compra:
+                orden.id_orden_compra,
             },
 
           });
 
-        if (!articulo) continue;
+        await this.prisma.$transaction(
 
-        /*
-        DEVOLVER STOCK
-        */
+          async (tx) => {
 
-        const nuevoStock =
+            for (const item of detalles) {
 
-          Number(articulo.stock_actual) +
-          Number(item.cantidad);
+              const articulo =
+                await tx.articulos.findFirst({
 
-        await tx.articulos.update({
+                  where: {
+                    id_articulo: item.id_articulo,
+                  },
 
-          where: {
-            id_articulo:
-              articulo.id_articulo,
-          },
+                });
 
-          data: {
-            stock_actual: nuevoStock,
-          },
+              if (!articulo) continue;
 
-        });
+              /*
+              DEVOLVER STOCK
+              */
 
-        /*
-        MOVIMIENTO STOCK
-        */
+              const nuevoStock =
 
-        await tx.stock_movimientos.create({
+                Number(articulo.stock_actual) +
+                Number(item.cantidad);
 
-          data: {
+              await tx.articulos.update({
 
-            id_empresa:
-              BigInt(id_empresa),
+                where: {
+                  id_articulo:
+                    articulo.id_articulo,
+                },
 
-            id_articulo:
-              articulo.id_articulo,
+                data: {
+                  stock_actual: nuevoStock,
+                },
 
-            tipo_movimiento:
-              'ENTRADA',
+              });
 
-            cantidad:
-              item.cantidad,
+              /*
+              MOVIMIENTO STOCK
+              */
 
-            referencia:
-              orden.numero_orden,
+              await tx.stock_movimientos.create({
 
-          },
+                data: {
 
-        });
+                  id_empresa:
+                    BigInt(id_empresa),
 
-      }
-await tx.cliente_movimientos.create({
-  data: {
-    id_empresa: BigInt(id_empresa),
-    id_cliente: orden.id_cliente,
+                  id_articulo:
+                    articulo.id_articulo,
 
-    tipo_movimiento: 'NOTA_CREDITO',
+                  tipo_movimiento:
+                    'ENTRADA',
 
-    monto: orden.total,
+                  cantidad:
+                    item.cantidad,
 
-    observacion:
-      `Cancelación ${orden.numero_orden}`,
-  },
-});
-      /*
-      ACTUALIZAR ORDEN
-      */
+                  referencia:
+                    orden.numero_orden,
 
-      await tx.ordenes_compra.update({
+                },
 
-        where: {
-          id_orden_compra:
-            orden.id_orden_compra,
-        },
+              });
 
+            }
+      await tx.cliente_movimientos.create({
         data: {
+          id_empresa: BigInt(id_empresa),
+          id_cliente: orden.id_cliente,
 
-          estado:
-            data.estado,
+          tipo_movimiento: 'NOTA_CREDITO',
 
-          observaciones:
-            data.observaciones,
+          monto: orden.total,
 
+          observacion:
+            `Cancelación ${orden.numero_orden}`,
         },
-
       });
+            /*
+            ACTUALIZAR ORDEN
+            */
 
-    },
+            await tx.ordenes_compra.update({
 
-  );
+              where: {
+                id_orden_compra:
+                  orden.id_orden_compra,
+              },
 
-  return this.findOne(
-    id,
-    id_empresa,
-  );
+              data: {
 
-}
+                estado:
+                  data.estado,
+
+                observaciones:
+                  data.observaciones,
+
+              },
+
+            });
+
+          },
+
+        );
+
+        return this.findOne(
+          id,
+          id_empresa,
+        );
+      }
     /*
     ==================================================
     ACTUALIZAR NORMAL
@@ -731,12 +705,6 @@ await tx.cliente_movimientos.create({
       },
 
     });
-
-    return this.findOne(
-      id,
-      id_empresa,
-    );
-
+    return this.findOne(id, id_empresa);
   }
-
 }

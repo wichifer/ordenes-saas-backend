@@ -22,7 +22,7 @@ console.log(
       secret: process.env.JWT_SECRET,
 
       signOptions: {
-        expiresIn: '7d',
+        expiresIn: '30d',
       },
     }),
   ],

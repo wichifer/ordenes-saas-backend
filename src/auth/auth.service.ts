@@ -48,6 +48,7 @@ export class AuthService {
         email: data.email,
       },
     });
+    
 
     const usuario = await this.prisma.usuarios.create({
       data: {
@@ -64,6 +65,17 @@ export class AuthService {
 
         password_hash,
 
+      },
+    });
+
+    // Crear Consumidor Final por defecto
+    await this.prisma.clientes.create({
+      data: {
+        id_empresa: empresa.id_empresa,
+        razon_social: 'CONSUMIDOR FINAL',
+        nombre: 'CONSUMIDOR',
+        apellido: 'FINAL',
+        estado: true,
       },
     });
 
@@ -111,7 +123,7 @@ export class AuthService {
       email: usuario.email,
       empresa: usuario.id_empresa.toString(),
     });
-
+console.log(token);
   return {
   token,
   usuario: {

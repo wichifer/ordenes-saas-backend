@@ -43,6 +43,7 @@ model clientes {
   telefono            String?               @db.VarChar(50)
   email               String?               @db.VarChar(150)
   direccion           String?
+  es_consumidor_final Boolean               @default(false)
   estado              Boolean?              @default(true)
   created_at          DateTime?             @default(now()) @db.Timestamp(6)
   updated_at          DateTime?             @default(now()) @db.Timestamp(6)
@@ -131,6 +132,7 @@ model articulos {
   id_empresa           BigInt
   codigo               String                 @db.VarChar(50)
   descripcion          String                 @db.VarChar(200)
+  unidad_medida        String                 @default("UN") @db.VarChar(10)
   precio_final         Decimal                @db.Decimal(12, 2)
   stock_actual         Decimal?               @default(0) @db.Decimal(12, 2)
   stock_minimo         Decimal?               @default(0) @db.Decimal(12, 2)
@@ -271,4 +273,58 @@ model suscripciones {
   max_ordenes       Int?      @default(100)
   created_at        DateTime? @default(now()) @db.Timestamp(6)
   empresas          empresas  @relation(fields: [id_empresa], references: [id_empresa], onDelete: NoAction, onUpdate: NoAction, map: "fk_suscripcion_empresa")
+}
+model facturas {
+  id_factura     BigInt   @id @default(autoincrement())
+  id_empresa     BigInt
+  id_cliente     BigInt
+
+  numero_factura String
+  total          Decimal
+  saldo          Decimal
+  estado         String   // PENDIENTE | PARCIAL | PAGADA
+
+  id_orden_compra BigInt?
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+}
+model cuentas_por_cobrar {
+  id_cxc       BigInt   @id @default(autoincrement())
+  id_empresa   BigInt
+  id_cliente   BigInt
+  id_factura   BigInt
+
+  saldo        Decimal
+  estado       String   // PENDIENTE | PARCIAL | PAGADA
+
+  created_at   DateTime @default(now())
+}
+model pagos_clientes {
+  id_pago      BigInt   @id @default(autoincrement())
+  id_empresa   BigInt
+  id_cliente   BigInt
+
+  monto        Decimal
+  metodo       String
+  referencia   String?
+
+  created_at   DateTime @default(now())
+}
+model pagos_aplicados {
+  id           BigInt @id @default(autoincrement())
+  id_pago      BigInt
+  id_factura   BigInt
+  monto        Decimal
+}
+model asientos_contables {
+  id_asiento   BigInt   @id @default(autoincrement())
+  id_empresa   BigInt
+
+  cuenta       String   // CXC, VENTAS, CAJA
+  tipo         String   // DEBE | HABER
+  monto        Decimal
+
+  referencia   String
+  created_at   DateTime @default(now())
 }

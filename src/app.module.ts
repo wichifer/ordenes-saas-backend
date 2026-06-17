@@ -23,14 +23,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ReportsModule } from './reports/reports.module';
 import { CashModule } from './cash/cash.module';
 
+//import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
 
   imports: [
 
-  ConfigModule.forRoot({
-    isGlobal: true,
-  }),
 
   PrismaModule,
   CompaniesModule,
@@ -50,7 +48,9 @@ import { CashModule } from './cash/cash.module';
 ],
   controllers: [AppController],
 
-  providers: [AppService],
+  providers: [AppService,
+
+  ],
 
 })
 

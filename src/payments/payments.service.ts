@@ -51,15 +51,31 @@ export class PaymentsService {
     user: any,
   ) {
 
-    const orden = await this.prisma.ordenes_compra.findUnique({
+const orden = await this.prisma.ordenes_compra.findFirst({
   where: {
     id_orden_compra: BigInt(data.id_orden_compra),
+    id_empresa: BigInt(user.empresa),
+    deleted_at: null,
   },
 });
-
 if (!orden) {
-  throw new Error('Orden no encontrada');
+  throw new NotFoundException(
+    'Orden no encontrada',
+  );
 }
+
+if (orden.estado === 'PAGADA') {
+  throw new BadRequestException(
+    'La orden ya se encuentra pagada',
+  );
+}
+
+if (orden.estado === 'ANULADA') {
+  throw new BadRequestException(
+    'No se puede registrar un pago sobre una orden anulada',
+  );
+}
+
 
 const idCliente = orden.id_cliente;
 
@@ -94,7 +110,10 @@ const idCliente = orden.id_cliente;
     if (
       Number(data.monto) > saldo
     ) {
-
+console.log('TOTAL ORDEN:', Number(orden.total));
+console.log('TOTAL PAGADO:', totalPagado);
+console.log('SALDO:', saldo);
+console.log('MONTO RECIBIDO:', Number(data.monto));
       throw new BadRequestException(
         `El pago supera el saldo pendiente (${saldo})`,
       );
@@ -150,9 +169,106 @@ const idCliente = orden.id_cliente;
       },
 
     });
+const nuevoTotalPagado =
+  totalPagado + Number(data.monto);
 
+if (nuevoTotalPagado >= Number(orden.total)) {
+  await this.prisma.ordenes_compra.update({
+    where: {
+      id_orden_compra: orden.id_orden_compra,
+    },
+    data: {
+      estado: 'PAGADA',
+    },
+  });
+}
     return pago;
 
   }
+async findPendingOrders(
+  id_empresa: string,
+) {
 
+  const ordenes =
+    await this.prisma.ordenes_compra.findMany({
+
+      where: {
+
+        id_empresa:
+          BigInt(id_empresa),
+
+        estado: 'APROBADA',
+
+        deleted_at: null,
+
+      },
+
+      include: {
+
+        clientes: true,
+
+        pagos: {
+
+          where: {
+
+            deleted_at: null,
+
+          },
+
+        },
+
+      },
+
+      orderBy: {
+
+        id_orden_compra: 'desc',
+
+      },
+
+    });
+
+  return ordenes.map((orden) => {
+
+    const totalPagado =
+      orden.pagos.reduce(
+
+        (acc, pago) =>
+          acc + Number(pago.monto),
+
+        0,
+
+      );
+
+    const saldoPendiente =
+      Number(orden.total) -
+      totalPagado;
+
+    return {
+
+      id_orden_compra:
+        orden.id_orden_compra,
+
+      numero_orden:
+        orden.numero_orden,
+
+      cliente:
+
+        orden.clientes.razon_social ||
+
+        `${orden.clientes.nombre} ${orden.clientes.apellido ?? ''}`,
+
+      total:
+        Number(orden.total),
+
+      total_pagado:
+        totalPagado,
+
+      saldo_pendiente:
+        saldoPendiente,
+
+    };
+
+  });
+
+}
 }

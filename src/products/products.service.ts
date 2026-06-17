@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { PrismaService }
@@ -88,7 +89,7 @@ async create(
 
   if (existing) {
 
-    throw new Error(
+    throw new BadRequestException(
       'Ya existe un producto con ese código',
     );
 
@@ -103,6 +104,8 @@ async create(
       codigo: data.codigo,
 
       descripcion: data.descripcion,
+
+      unidad_medida: data.unidad_medida ?? 'UN',
 
       precio_final: data.precio_final,
 
@@ -171,7 +174,7 @@ if (data.codigo) {
     product.id_articulo
   ) {
 
-    throw new Error(
+    throw new BadRequestException(
       'Ya existe un producto con ese código',
     );
 
@@ -189,6 +192,8 @@ if (data.codigo) {
         codigo: data.codigo,
 
         descripcion: data.descripcion,
+
+        unidad_medida: data.unidad_medida,
 
         precio_final: data.precio_final,
 

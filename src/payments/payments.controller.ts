@@ -37,7 +37,16 @@ export class PaymentsController {
     );
 
   }
+@Get('pending-orders')
+findPendingOrders(
+  @Req() request: any,
+) {
 
+  return this.paymentsService.findPendingOrders(
+    request.user.empresa,
+  );
+
+}
   @Post()
   create(
     @Body() body: CreatePaymentDto, 

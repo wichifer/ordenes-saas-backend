@@ -40,7 +40,15 @@ export class ClientsController {
     );
 
   }
-
+  @Get('consumidor-final')
+getConsumidorFinal(
+  @Req() request: any,
+) {
+  return this.clientsService.getConsumidorFinal(
+    BigInt(request.user.empresa),
+  );
+}
+@Get('consumidor-final')
   @Get(':id')
   findOne(
 
