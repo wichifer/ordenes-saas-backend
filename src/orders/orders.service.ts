@@ -515,33 +515,33 @@ for (const item of detalles) {
             },
 
           });
-const cliente = await tx.clientes.findUnique({
-  where: {
-    id_cliente: orden.id_cliente,
-  },
-});
+          const cliente = await tx.clientes.findUnique({
+            where: {
+              id_cliente: orden.id_cliente,
+            },
+          });
 
-if (!cliente?.es_consumidor_final) {
+          if (!cliente?.es_consumidor_final) {
 
-  await tx.cliente_movimientos.create({
+            await tx.cliente_movimientos.create({
 
-    data: {
+              data: {
 
-      id_empresa: orden.id_empresa,
+                id_empresa: orden.id_empresa,
 
-      id_cliente: orden.id_cliente,
+                id_cliente: orden.id_cliente,
 
-      tipo_movimiento: 'VENTA',
+                tipo_movimiento: 'VENTA',
 
-      monto: orden.total,
+                monto: orden.total,
 
-      observacion: `Orden ${orden.numero_orden}`,
+                observacion: `Orden ${orden.numero_orden}`,
 
-    },
+              },
 
-  });
+            });
 
-}
+          }
         },
 
       );

@@ -136,7 +136,9 @@ async salesByClient(
       id_cliente:
         cliente.id_cliente,
 
-      estado: 'APROBADA',
+      estado: {
+        in: ['APROBADA', 'PAGADA'],
+      },
 
       deleted_at: null,
 
@@ -230,16 +232,13 @@ async sales(
   to?: string,
 ) {
 
-  const where: any = {
-
-    id_empresa:
-      BigInt(id_empresa),
-
-    estado: 'APROBADA',
-
-    deleted_at: null,
-
-  };
+const where: any = {
+  id_empresa: BigInt(id_empresa),
+  estado: {
+    in: ['APROBADA', 'PAGADA'],
+  },
+  deleted_at: null,
+};
 
   if (from || to) {
 
@@ -328,7 +327,9 @@ async topProducts(
     id_empresa:
       BigInt(id_empresa),
 
-    estado: 'APROBADA',
+      estado: {
+       in: ['APROBADA', 'PAGADA'],
+      },
 
     deleted_at: null,
 
