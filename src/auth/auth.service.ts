@@ -95,11 +95,15 @@ export class AuthService {
 
   async login(data: any) {
 
-    const usuario = await this.prisma.usuarios.findUnique({
-      where: {
-        email: data.email,
-      },
-    });
+const usuario = await this.prisma.usuarios.findUnique({
+  where: {
+    email: data.email,
+  },
+
+  include: {
+    roles: true,
+  },
+});
 
     if (!usuario) {
       throw new BadRequestException('Usuario no encontrado');
@@ -120,21 +124,29 @@ export class AuthService {
 
     const token = this.jwtService.sign({
       sub: usuario.id_usuario.toString(),
+
       email: usuario.email,
+
       empresa: usuario.id_empresa.toString(),
+
+      rol: usuario.roles.nombre,
     });
-console.log(token);
-  return {
-  token,
-  usuario: {
-    id_usuario: usuario.id_usuario,
-    id_empresa: usuario.id_empresa,
-    id_rol: usuario.id_rol,
-    nombre: usuario.nombre,
-    apellido: usuario.apellido,
-    email: usuario.email,
-  },
-};
+    console.log(token);
+    return {
+      token,
+
+      usuario: {
+        id_usuario: usuario.id_usuario,
+        id_empresa: usuario.id_empresa,
+        id_rol: usuario.id_rol,
+
+        rol: usuario.roles.nombre,
+
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        email: usuario.email,
+      },
+    };
 
   }
 

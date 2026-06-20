@@ -5,7 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 import { PrismaModule } from '../prisma/prisma.module';
-
+import { JwtStrategy } from './jwt.strategy';
 
 console.log(
   'JWT SECRET =>',
@@ -14,8 +14,6 @@ console.log(
 
 @Module({
   imports: [
-    
-
     PrismaModule,
 
     JwtModule.register({
@@ -29,9 +27,13 @@ console.log(
 
   controllers: [AuthController],
 
-  providers: [AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+  ],
 
   exports: [
+    AuthService,
     JwtModule,
   ],
 })
