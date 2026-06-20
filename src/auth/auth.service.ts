@@ -79,11 +79,12 @@ export class AuthService {
       },
     });
 
-    const token = this.jwtService.sign({
-      sub: usuario.id_usuario.toString(),
-      email: usuario.email,
-      empresa: empresa.id_empresa.toString(),
-    });
+ const token = this.jwtService.sign({
+  id_usuario: usuario.id_usuario.toString(),
+  email: usuario.email,
+  id_empresa: empresa.id_empresa.toString(),
+  rol: 'ADMIN',
+});
 
     return {
       token,
@@ -93,61 +94,57 @@ export class AuthService {
 
   }
 
-  async login(data: any) {
+async login(data: any) {
 
-const usuario = await this.prisma.usuarios.findUnique({
-  where: {
-    email: data.email,
-  },
+  const usuario = await this.prisma.usuarios.findUnique({
+    where: {
+      email: data.email,
+    },
 
-  include: {
-    roles: true,
-  },
-});
+    include: {
+      roles: true,
+    },
+  });
 
-    if (!usuario) {
-      throw new BadRequestException('Usuario no encontrado');
-    }
+  if (!usuario) {
+    throw new BadRequestException('Usuario no encontrado');
+  }
 
-    if (!usuario.password_hash) {
-      throw new BadRequestException('Usuario sin password');
-    }
+  if (!usuario.password_hash) {
+    throw new BadRequestException('Usuario sin password');
+  }
 
-    const passwordOk = await bcrypt.compare(
-      data.password,
-      usuario.password_hash,
-    );
+  const passwordOk = await bcrypt.compare(
+    data.password,
+    usuario.password_hash,
+  );
 
-    if (!passwordOk) {
-      throw new BadRequestException('Password incorrecto');
-    }
+  if (!passwordOk) {
+    throw new BadRequestException('Password incorrecto');
+  }
 
-    const token = this.jwtService.sign({
-      sub: usuario.id_usuario.toString(),
+  const token = this.jwtService.sign({
+    id_usuario: usuario.id_usuario.toString(),
+    email: usuario.email,
+    id_empresa: usuario.id_empresa.toString(),
+    rol: usuario.roles.nombre,
+  });
 
-      email: usuario.email,
+  return {
+    token,
 
-      empresa: usuario.id_empresa.toString(),
+    usuario: {
+      id_usuario: usuario.id_usuario,
+      id_empresa: usuario.id_empresa,
+      id_rol: usuario.id_rol,
 
       rol: usuario.roles.nombre,
-    });
-    console.log(token);
-    return {
-      token,
 
-      usuario: {
-        id_usuario: usuario.id_usuario,
-        id_empresa: usuario.id_empresa,
-        id_rol: usuario.id_rol,
-
-        rol: usuario.roles.nombre,
-
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        email: usuario.email,
-      },
-    };
-
-  }
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      email: usuario.email,
+    },
+  };
+}
 
 }

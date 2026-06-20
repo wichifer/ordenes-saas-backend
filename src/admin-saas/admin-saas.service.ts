@@ -162,4 +162,36 @@ export class AdminSaasService {
       };
     });
   }
+async findAllEmpresas() {
+  const empresas = await this.prisma.empresas.findMany({
+    orderBy: {
+      created_at: 'desc',
+    },
+    include: {
+      usuarios: {
+        where: {
+          roles: {
+            nombre: 'ADMIN',
+          },
+        },
+        select: {
+          email: true,
+        },
+        take: 1,
+      },
+    },
+  });
+
+  return empresas.map((empresa) => ({
+    id_empresa: empresa.id_empresa,
+    razon_social: empresa.razon_social,
+    nombre_comercial: empresa.nombre_comercial,
+    cuit: empresa.cuit,
+    email: empresa.email,
+    telefono: empresa.telefono,
+    estado: empresa.estado,
+    created_at: empresa.created_at,
+    usuario_admin: empresa.usuarios[0]?.email ?? null,
+  }));
+}
 }
