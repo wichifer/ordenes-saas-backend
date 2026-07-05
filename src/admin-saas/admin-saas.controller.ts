@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -33,4 +36,13 @@ export class AdminSaasController {
   ) {
     return this.service.createCompany(dto);
   }
+
+@Delete('empresas/:id')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN_SAAS')
+removeCompany(
+  @Param('id', ParseIntPipe) id: number,
+) {
+  return this.service.removeCompany(id);
+}
 }
