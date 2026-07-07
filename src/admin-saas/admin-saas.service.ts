@@ -1,3 +1,4 @@
+// src/admin-saas/admin-saas.service.ts
 import {
   BadRequestException,
   Injectable,
@@ -5,7 +6,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
-
+import { UpdateCompanyDto } from './dto/update-company.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -21,7 +22,7 @@ export class AdminSaasService {
         cuit: dto.cuit,
       },
     });
-
+console.log("Empresa existente:", existe);
     if (existe) {
       throw new BadRequestException(
         'Ya existe una empresa con ese CUIT',
@@ -171,4 +172,18 @@ export class AdminSaasService {
       message: 'Empresa desactivada correctamente',
     };
   }
+async updateEmpresa(id: number, dto: UpdateCompanyDto) {
+  const empresa = await this.prisma.empresas.findUnique({
+    where: { id_empresa: id },
+  });
+
+  if (!empresa) {
+    throw new BadRequestException('La empresa no existe');
+  }
+
+  return this.prisma.empresas.update({
+    where: { id_empresa: id },
+    data: dto,
+  });
+}
 }

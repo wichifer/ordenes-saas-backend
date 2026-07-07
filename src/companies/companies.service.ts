@@ -1,3 +1,5 @@
+// src/companies/companies.service.ts
+
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -20,12 +22,12 @@ export class CompaniesService {
 
   }
 
-  async create(data: any) {
+async create(data: any) {
+  console.log(">>> ENTRE A CompaniesService.create");
 
-    return this.prisma.empresas.create({
-      data,
-    });
-
-  }
+  return this.prisma.empresas.create({
+    data,
+  });
+}
 
 }
