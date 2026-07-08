@@ -15,12 +15,19 @@ export class AdminSaasController {
     private readonly adminSaasService: AdminSaasService,
   ) {}
 
-  @Get('empresas')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_SAAS')
-  findAllEmpresas() {
-    return this.adminSaasService.findAllEmpresas();
-  }
+@Get('empresas')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN_SAAS')
+async findAllEmpresas() {
+
+  console.log('🔥 ENTRE AL CONTROLLER EMPRESAS');
+
+  const result = await this.adminSaasService.findAllEmpresas();
+
+  console.log('🔥 EMPRESAS DEVUELTAS:', result.length);
+
+  return result;
+}
 
   @Post('empresas')
   createCompany(

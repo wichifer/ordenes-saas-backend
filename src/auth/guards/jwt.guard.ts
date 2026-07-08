@@ -48,37 +48,18 @@ export class JwtGuard implements CanActivate {
   process.env.JWT_SECRET,
 );
 
-    try {
-console.log(
-  'JWT SERVICE =>',
-  this.jwtService,
-);
-      const payload =
-        await this.jwtService.verifyAsync(
-          token,
-        );
+try {
+  const payload = await this.jwtService.verifyAsync(token);
 
-      console.log(
-        'PAYLOAD =>',
-        payload,
-      );
+  console.log("JWT OK:", payload);
 
-      request.user = payload;
+  request.user = payload;
 
-      return true;
-
-    } catch (error) {
-
-      console.log(
-        'ERROR JWT =>',
-        error,
-      );
-
-      throw new UnauthorizedException(
-        'Token inválido',
-      );
-
-    }
+  return true;
+} catch (error) {
+  console.error("JWT ERROR:", error);
+  throw error;
+}
 
   }
 
