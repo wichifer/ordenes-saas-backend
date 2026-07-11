@@ -16,8 +16,8 @@ export class AdminSaasController {
   ) {}
 
 @Get('empresas')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN_SAAS')
+//@UseGuards(JwtAuthGuard, RolesGuard)
+//@Roles('ADMIN_SAAS')
 async findAllEmpresas() {
 
   console.log('🔥 ENTRE AL CONTROLLER EMPRESAS');
@@ -28,7 +28,12 @@ async findAllEmpresas() {
 
   return result;
 }
-
+@Get('empresas/:id')
+findOneEmpresa(
+  @Param('id', ParseIntPipe) id: number,
+) {
+  return this.adminSaasService.findOneEmpresa(id);
+}
   @Post('empresas')
   createCompany(
     @Body() dto: CreateCompanyDto,

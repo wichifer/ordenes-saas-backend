@@ -1,9 +1,10 @@
 // src/admin-saas/admin-saas.service.ts
+
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
@@ -185,5 +186,24 @@ async updateEmpresa(id: number, dto: UpdateCompanyDto) {
     where: { id_empresa: id },
     data: dto,
   });
+}
+async findOneEmpresa(id: number) {
+
+  const empresa =
+    await this.prisma.empresas.findUnique({
+      where: {
+        id_empresa: id,
+      },
+    });
+
+
+  if (!empresa) {
+    throw new NotFoundException(
+      'Empresa no encontrada'
+    );
+  }
+
+
+  return empresa;
 }
 }
