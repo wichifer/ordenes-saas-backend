@@ -64,7 +64,7 @@ model empresas {
   email               String?               @db.VarChar(150)
   telefono            String?               @db.VarChar(50)
   direccion           String?
-  estado              Boolean?              @default(true)
+  estado              Boolean               @default(true)
   plan_saas           String?               @default("TRIAL") @db.VarChar(50)
   created_at          DateTime?             @default(now()) @db.Timestamp(6)
   updated_at          DateTime?             @default(now()) @db.Timestamp(6)

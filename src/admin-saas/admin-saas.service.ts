@@ -111,27 +111,27 @@ console.log("Empresa existente:", existe);
   // GET ALL COMPANIES
   // ------------------------------------------------
   async findAllEmpresas() {
-    const empresas = await this.prisma.empresas.findMany({
+const empresas = await this.prisma.empresas.findMany({
+  where: {
+    deleted_at: null,
+  },
+  orderBy: {
+    created_at: "desc",
+  },
+  include: {
+    usuarios: {
       where: {
-        estado: true, // 👈 IMPORTANTE (baja lógica)
-      },
-      orderBy: {
-        created_at: 'desc',
-      },
-      include: {
-        usuarios: {
-          where: {
-            roles: {
-              nombre: 'ADMIN',
-            },
-          },
-          select: {
-            email: true,
-          },
-          take: 1,
+        roles: {
+          nombre: "ADMIN",
         },
       },
-    });
+      select: {
+        email: true,
+      },
+      take: 1,
+    },
+  },
+});
 
     return empresas.map((empresa) => ({
       id_empresa: empresa.id_empresa,
@@ -206,4 +206,49 @@ async findOneEmpresa(id: number) {
 
   return empresa;
 }
+async dashboard() {
+  const [
+    empresas,
+    empresasActivas,
+    empresasSuspendidas,
+    usuarios,
+  ] = await Promise.all([
+    this.prisma.empresas.count(),
+
+    this.prisma.empresas.count({
+      where: {
+        estado: true,
+      },
+    }),
+
+    this.prisma.empresas.count({
+      where: {
+        estado: false,
+      },
+    }),
+
+    this.prisma.usuarios.count(),
+  ]);
+
+  return {
+    empresas,
+    empresasActivas,
+    empresasSuspendidas,
+    usuarios,
+  };
+}
+async updateCompanyStatus(
+  id: number,
+  estado: boolean,
+) {
+  return this.prisma.empresas.update({
+    where: {
+      id_empresa: BigInt(id),
+    },
+    data: {
+      estado,
+    },
+  });
+}
+
 }
