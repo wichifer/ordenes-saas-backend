@@ -1,165 +1,119 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Patch,
   Post,
-  Delete,
   Req,
-  Param,
   UseGuards,
 } from '@nestjs/common';
 
-import { JwtGuard }
-from '../auth/guards/jwt.guard';
+import { ClientsService } from './clients.service';
 
-import { ClientsService }
-from './clients.service';
+import { CreateClientDto } from './dto/create-client.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 
-import { CreateClientDto }
-from './dto/create-client.dto';
-
-import { UpdateClientDto }
-from './dto/update-client.dto';
-
-@UseGuards(JwtGuard)
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('clients')
-
+@UseGuards(JwtAuthGuard)
 export class ClientsController {
-
   constructor(
     private readonly clientsService: ClientsService,
   ) {}
 
   @Get()
-  findAll(@Req() request: any) {
-
+  findAll(@Req() req) {
     return this.clientsService.findAll(
-      request.user.empresa,
+      req.user.id_empresa,
     );
-
   }
+
   @Get('consumidor-final')
-getConsumidorFinal(
-  @Req() request: any,
-) {
-  return this.clientsService.getConsumidorFinal(
-    BigInt(request.user.empresa),
-  );
-}
-@Get('consumidor-final')
+  getConsumidorFinal(@Req() req) {
+    return this.clientsService.getConsumidorFinal(
+      BigInt(req.user.id_empresa),
+    );
+  }
+
   @Get(':id')
   findOne(
-
     @Param('id') id: string,
-
-    @Req() request: any,
-
+    @Req() req,
   ) {
-
     return this.clientsService.findOne(
       id,
-      request.user.empresa,
+      req.user.id_empresa,
     );
-
   }
-@Get(':id/saldo')
-getBalance(
 
-  @Param('id') id: string,
+  @Get(':id/saldo')
+  getSaldo(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.clientsService.getBalance(
+      id,
+      req.user.id_empresa,
+    );
+  }
 
-  @Req() request: any,
+  @Get(':id/movimientos')
+  getMovimientos(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.clientsService.getMovimientos(
+      id,
+      req.user.id_empresa,
+    );
+  }
 
-) {
+  @Get(':id/estado-cuenta')
+  accountStatement(
+    @Param('id') id: string,
+    @Req() req,
+  ) {
+    return this.clientsService.accountStatement(
+      id,
+      req.user.id_empresa,
+    );
+  }
 
-  return this.clientsService.getBalance(
-
-    id,
-
-    request.user.empresa,
-
-  );
-
-}
   @Post()
   create(
-
-    @Body() body: CreateClientDto,
-
-    @Req() request: any,
-
+    @Body() dto: CreateClientDto,
+    @Req() req,
   ) {
-
     return this.clientsService.create(
-      body,
-      request.user,
+      dto,
+      req.user,
     );
-
   }
 
   @Patch(':id')
   update(
-
     @Param('id') id: string,
-
-    @Body() body: UpdateClientDto,
-
-    @Req() request: any,
-
+    @Body() dto: UpdateClientDto,
+    @Req() req,
   ) {
-
     return this.clientsService.update(
       id,
-      body,
-      request.user.empresa,
+      dto,
+      req.user.id_empresa,
     );
-
   }
 
   @Delete(':id')
   remove(
-
     @Param('id') id: string,
-
-    @Req() request: any,
-
+    @Req() req,
   ) {
-
     return this.clientsService.remove(
       id,
-      request.user.empresa,
+      req.user.id_empresa,
     );
-
   }
-@Get(':id/movimientos')
-getMovimientos(
-
-  @Param('id') id: string,
-
-  @Req() request: any,
-
-) {
-
-  return this.clientsService.getMovimientos(
-
-    id,
-
-    request.user.empresa,
-
-  );
-
-}
-@Get(':id/account-statement')
-accountStatement(
-  @Param('id') id: string,
-  @Req() request: any,
-) {
-
-  return this.clientsService.accountStatement(
-    id,
-    request.user.empresa,
-  );
-
-}
 }

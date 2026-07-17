@@ -35,7 +35,7 @@ model cajas {
 model clientes {
   id_cliente          BigInt                @id @default(autoincrement())
   id_empresa          BigInt
-  nombre              String                @db.VarChar(100)
+  nombre              String?               @db.VarChar(100)
   apellido            String?               @db.VarChar(100)
   razon_social        String?               @db.VarChar(150)
   documento           String?               @db.VarChar(30)

@@ -66,7 +66,19 @@ async getBalance(
       id,
       id_empresa,
     );
+if (cliente.es_consumidor_final) {
 
+    return {
+      cliente,
+
+      debe: 0,
+
+      pagado: 0,
+
+      saldo: 0,
+    };
+
+  }
   const movimientos =
     await this.prisma.cliente_movimientos.findMany({
 
@@ -77,6 +89,9 @@ async getBalance(
         id_empresa: BigInt(id_empresa),
 
       },
+      orderBy:{
+  created_at:'desc'
+}
 
     });
 
@@ -148,7 +163,14 @@ async getBalance(
     data: CreateClientDto,
     user: any,
   ) {
+const nombre = data.nombre?.trim();
+const razonSocial = data.razon_social?.trim();
 
+if (!nombre && !razonSocial) {
+  throw new BadRequestException(
+    'Debe ingresar un nombre o una razón social.',
+  );
+}
     if (data.email) {
 
       const existingEmail =
@@ -158,7 +180,7 @@ async getBalance(
 
             email: data.email,
 
-            id_empresa: BigInt(user.empresa),
+            id_empresa: BigInt(user.id_empresa),
 
             deleted_at: null,
 
@@ -185,7 +207,7 @@ async getBalance(
 
             cuit: data.cuit,
 
-            id_empresa: BigInt(user.empresa),
+           id_empresa: BigInt(user.id_empresa),
 
             deleted_at: null,
 
@@ -203,21 +225,21 @@ async getBalance(
 
     }
 
- return this.prisma.clientes.create({
+return this.prisma.clientes.create({
   data: {
-    id_empresa: BigInt(user.empresa),
-    nombre: data.nombre || '',
-    apellido: data.apellido,
-    razon_social: data.razon_social,
-    documento: data.documento,
-    cuit: data.cuit,
-    telefono: data.telefono,
-    email: data.email,
-    direccion: data.direccion,
-    estado: true,
+  id_empresa: BigInt(user.id_empresa),
 
-    // El backend fija este valor
-    es_consumidor_final: false,
+    nombre,
+    apellido: data.apellido?.trim(),
+    razon_social: razonSocial,
+    documento: data.documento?.trim(),
+    cuit: data.cuit?.trim(),
+    telefono: data.telefono?.trim(),
+    email: data.email?.trim(),
+    direccion: data.direccion?.trim(),
+
+    estado: true,
+    es_consumidor_final: data.es_consumidor_final ?? false,
   },
 });
   }
@@ -250,6 +272,22 @@ async getBalance(
       );
 
     }
+const nombre =
+  data.nombre !== undefined
+    ? data.nombre.trim()
+    : client.nombre?.trim();
+
+const razonSocial =
+  data.razon_social !== undefined
+    ? data.razon_social.trim()
+    : client.razon_social?.trim();
+
+if (!nombre && !razonSocial) {
+  throw new BadRequestException(
+    'Debe ingresar un nombre o una razón social.',
+  );
+}
+
 if (client.es_consumidor_final) {
   throw new BadRequestException(
     'No se puede modificar el cliente Consumidor Final',
@@ -323,41 +361,39 @@ if (client.es_consumidor_final) {
         id_cliente: client.id_cliente,
       },
 
-        data: {
+data: {
+  ...(data.nombre !== undefined && {
+    nombre: data.nombre.trim(),
+  }),
 
-    ...(data.nombre !== undefined && {
-      nombre: data.nombre,
-    }),
+  ...(data.apellido !== undefined && {
+    apellido: data.apellido?.trim(),
+  }),
 
-    ...(data.apellido !== undefined && {
-      apellido: data.apellido,
-    }),
+  ...(data.razon_social !== undefined && {
+    razon_social: data.razon_social?.trim(),
+  }),
 
-    ...(data.razon_social !== undefined && {
-      razon_social: data.razon_social,
-    }),
+  ...(data.documento !== undefined && {
+    documento: data.documento?.trim(),
+  }),
 
-    ...(data.documento !== undefined && {
-      documento: data.documento,
-    }),
+  ...(data.cuit !== undefined && {
+    cuit: data.cuit?.trim(),
+  }),
 
-    ...(data.cuit !== undefined && {
-      cuit: data.cuit,
-    }),
+  ...(data.telefono !== undefined && {
+    telefono: data.telefono?.trim(),
+  }),
 
-    ...(data.telefono !== undefined && {
-      telefono: data.telefono,
-    }),
+  ...(data.email !== undefined && {
+    email: data.email?.trim(),
+  }),
 
-    ...(data.email !== undefined && {
-      email: data.email,
-    }),
-
-    ...(data.direccion !== undefined && {
-      direccion: data.direccion,
-    }),
-
-  },
+  ...(data.direccion !== undefined && {
+    direccion: data.direccion?.trim(),
+  }),
+},
 
     });
 
@@ -503,15 +539,20 @@ async accountStatement(
 
   }
 
-  return {
+return {
 
-    cliente,
+  cliente,
 
+  resumen: {
+    debe,
+    pagado,
     saldo: debe - pagado,
+  },
 
-    movimientos,
+  movimientos,
 
-  };
+};
 
 }
+
 }
