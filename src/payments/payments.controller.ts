@@ -33,7 +33,7 @@ export class PaymentsController {
   ) {
 
     return this.paymentsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -43,7 +43,7 @@ findPendingOrders(
 ) {
 
   return this.paymentsService.findPendingOrders(
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }

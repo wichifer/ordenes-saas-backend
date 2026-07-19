@@ -36,7 +36,7 @@ export class ProductsController {
   findAll(@Req() request: any) {
 
     return this.productsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -52,7 +52,7 @@ export class ProductsController {
 
     return this.productsService.findOne(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -87,7 +87,7 @@ export class ProductsController {
     return this.productsService.update(
       id,
       body,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -103,7 +103,7 @@ export class ProductsController {
 
     return this.productsService.remove(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

@@ -1,3 +1,4 @@
+// src/clients/clients.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -13,6 +14,10 @@ from './dto/create-client.dto';
 import { UpdateClientDto }
 from './dto/update-client.dto';
 
+import {
+  CLIENT_MOVEMENT_TYPES,
+} from './constants/client-movements';
+
 @Injectable()
 
 export class ClientsService {
@@ -20,6 +25,37 @@ export class ClientsService {
   constructor(
     private prisma: PrismaService,
   ) {}
+private calculateBalance(
+  movimientos: {
+    tipo_movimiento: string;
+    monto: any;
+  }[],
+) {
+  let debe = 0;
+  let pagado = 0;
+
+  for (const mov of movimientos) {
+    const monto = Number(mov.monto);
+
+    switch (mov.tipo_movimiento) {
+      case CLIENT_MOVEMENT_TYPES.VENTA:
+      case CLIENT_MOVEMENT_TYPES.SALDO_INICIAL:
+        debe += monto;
+        break;
+
+      case CLIENT_MOVEMENT_TYPES.PAGO:
+      case CLIENT_MOVEMENT_TYPES.NOTA_CREDITO:
+        pagado += monto;
+        break;
+    }
+  }
+
+  return {
+    debe,
+    pagado,
+    saldo: debe - pagado,
+  };
+}
 async getConsumidorFinal(idEmpresa: bigint) {
   const cliente = await this.prisma.clientes.findFirst({
     where: {
@@ -60,72 +96,38 @@ async getBalance(
   id: string,
   id_empresa: string,
 ) {
+  const cliente = await this.findOne(
+    id,
+    id_empresa,
+  );
 
-  const cliente =
-    await this.findOne(
-      id,
-      id_empresa,
-    );
-if (cliente.es_consumidor_final) {
-
+  if (cliente.es_consumidor_final) {
     return {
       cliente,
-
       debe: 0,
-
       pagado: 0,
-
       saldo: 0,
     };
-
   }
+
   const movimientos =
     await this.prisma.cliente_movimientos.findMany({
-
       where: {
-
         id_cliente: BigInt(id),
-
         id_empresa: BigInt(id_empresa),
-
       },
-      orderBy:{
-  created_at:'desc'
-}
-
+      orderBy: {
+        created_at: 'desc',
+      },
     });
 
-  let debe = 0;
-  let pagado = 0;
+  const resumen =
+    this.calculateBalance(movimientos);
 
-  for (const mov of movimientos) {
-
-  const monto = Number(mov.monto);
-
-  switch (mov.tipo_movimiento) {
-
-    case 'VENTA':
-      debe += monto;
-      break;
-
-    case 'PAGO':
-    case 'NOTA_CREDITO':
-      pagado += monto;
-      break;
-  }
-}
   return {
-
     cliente,
-
-    debe,
-
-    pagado,
-
-    saldo: debe - pagado,
-
+    ...resumen,
   };
-
 }
   async findOne(
     id: string,
@@ -488,7 +490,6 @@ async accountStatement(
   id: string,
   id_empresa: string,
 ) {
-
   const cliente =
     await this.findOne(
       id,
@@ -497,62 +498,23 @@ async accountStatement(
 
   const movimientos =
     await this.prisma.cliente_movimientos.findMany({
-
       where: {
-
-        id_cliente:
-          BigInt(id),
-
-        id_empresa:
-          BigInt(id_empresa),
-
+        id_cliente: BigInt(id),
+        id_empresa: BigInt(id_empresa),
       },
-
       orderBy: {
-
         created_at: 'asc',
-
       },
-
     });
 
-  let debe = 0;
-  let pagado = 0;
+  const resumen =
+    this.calculateBalance(movimientos);
 
-  for (const mov of movimientos) {
-
-    const monto =
-      Number(mov.monto);
-
-    switch (mov.tipo_movimiento) {
-
-      case 'VENTA':
-        debe += monto;
-        break;
-
-      case 'PAGO':
-      case 'NOTA_CREDITO':
-        pagado += monto;
-        break;
-
-    }
-
-  }
-
-return {
-
-  cliente,
-
-  resumen: {
-    debe,
-    pagado,
-    saldo: debe - pagado,
-  },
-
-  movimientos,
-
-};
-
+  return {
+    cliente,
+    resumen,
+    movimientos,
+  };
 }
 
 }

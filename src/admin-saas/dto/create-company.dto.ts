@@ -1,4 +1,4 @@
-// dto/create-company.dto.ts
+// src/admin-saas/dto/create-company.dto.ts
 
 import {
   IsEmail,

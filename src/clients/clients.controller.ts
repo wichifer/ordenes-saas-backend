@@ -60,6 +60,7 @@ export class ClientsController {
     );
   }
 
+  
   @Get(':id/movimientos')
   getMovimientos(
     @Param('id') id: string,

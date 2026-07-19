@@ -36,7 +36,7 @@ export class ClientsController {
   findAll(@Req() request: any) {
 
     return this.clientsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -52,7 +52,7 @@ export class ClientsController {
 
     return this.clientsService.findOne(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -87,7 +87,7 @@ export class ClientsController {
     return this.clientsService.update(
       id,
       body,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -103,7 +103,7 @@ export class ClientsController {
 
     return this.clientsService.remove(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

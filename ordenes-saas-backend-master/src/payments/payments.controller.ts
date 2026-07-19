@@ -25,7 +25,7 @@ export class PaymentsController {
   constructor(
     private readonly paymentsService:
       PaymentsService,
-  ) {}
+  ) {console.log(">>> PaymentsController INSTANCIADO");}
 
   @Get()
   findAll(
@@ -33,22 +33,25 @@ export class PaymentsController {
   ) {
 
     return this.paymentsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
 
-  @Post()
-  create(
-    @Body() body: CreatePaymentDto, 
-    @Req() request: any,
-  ) {
+@Post()
+create(
+  @Body() body: CreatePaymentDto,
+  @Req() request: any,
+) {
+  console.log("BODY:");
+  console.log(body);
 
-    return this.paymentsService.create(
-      body,
-      request.user,
-    );
+  console.log("USER:");
+  console.log(request.user);
 
-  }
-
+  return this.paymentsService.create(
+    body,
+    request.user,
+  );
+}
 }

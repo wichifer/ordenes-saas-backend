@@ -27,7 +27,7 @@ executive(
 ) {
 
   return this.dashboardService.executive(
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }
@@ -37,7 +37,7 @@ alerts(
 ) {
 
   return this.dashboardService.alerts(
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }
@@ -54,7 +54,7 @@ alerts(
   ) {
 
     return this.dashboardService.getKpis(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -71,7 +71,7 @@ alerts(
   ) {
 
     return this.dashboardService.recentOrders(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -88,7 +88,7 @@ alerts(
   ) {
 
     return this.dashboardService.salesByMonth(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -104,7 +104,7 @@ alerts(
   ) {
 
     return this.dashboardService.topProducts(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

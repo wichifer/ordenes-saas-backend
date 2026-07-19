@@ -34,7 +34,7 @@ export class DashboardController {
   ) {
 
     return this.dashboardService.getKpis(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -51,7 +51,7 @@ export class DashboardController {
   ) {
 
     return this.dashboardService.recentOrders(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -68,7 +68,7 @@ export class DashboardController {
   ) {
 
     return this.dashboardService.salesByMonth(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

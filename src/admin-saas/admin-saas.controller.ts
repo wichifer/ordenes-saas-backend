@@ -22,7 +22,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+
 @Controller('admin-saas')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN_SAAS')
 export class AdminSaasController {
   constructor(
     private readonly adminSaasService: AdminSaasService,

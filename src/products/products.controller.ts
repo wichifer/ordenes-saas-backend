@@ -36,7 +36,7 @@ export class ProductsController {
   findAll(@Req() request: any) {
 
     return this.productsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -46,7 +46,7 @@ lowStock(
 ) {
 
   return this.productsService.lowStock(
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }
@@ -61,7 +61,7 @@ lowStock(
 
     return this.productsService.findOne(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -96,7 +96,7 @@ lowStock(
     return this.productsService.update(
       id,
       body,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -112,7 +112,7 @@ lowStock(
 
     return this.productsService.remove(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

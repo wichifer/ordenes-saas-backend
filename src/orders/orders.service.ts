@@ -1,3 +1,4 @@
+// src/orders/orders.service.ts
 import { Injectable } from '@nestjs/common';
 import {
 NotFoundException,
@@ -14,7 +15,11 @@ from './dto/update-order.dto';
 
 import { AuditService }
 from '../audit/audit.service';
-//import { OrderIntegrationService } from 'src/modules/integrations/order-integration.service';
+
+
+import {
+  CLIENT_MOVEMENT_TYPES,
+} from '../clients/constants/client-movements';
 
 @Injectable()
 
@@ -22,10 +27,10 @@ export class OrdersService {
 
 
   constructor(
-  private prisma: PrismaService,
-  private auditService: AuditService,
+    private prisma: PrismaService,
+    private auditService: AuditService,
 
-) {}
+  ) {}
   /*
   ==================================================
   LISTAR ORDENES
@@ -143,7 +148,7 @@ let numeroOrden = 'OC-0001';
   await this.prisma.ordenes_compra.findFirst({
 
     where: {
-      id_empresa: BigInt(user.empresa),
+      id_empresa: BigInt(user.id_empresa),
     },
 
     orderBy: {
@@ -239,20 +244,21 @@ if (!body.items || body.items.length === 0) {
     /*
     CREAR ORDEN
     */
-
+console.log("BODY:", body);
+console.log("USER:", user);
     const orden =
       await this.prisma.ordenes_compra.create({
 
         data: {
 
           id_empresa:
-            BigInt(user.empresa),
+            BigInt(user.id_empresa),
 
           id_cliente:
             BigInt(body.id_cliente),
 
           id_usuario:
-            BigInt(user.sub),
+            BigInt(user.id_usuario),
 
           numero_orden: numeroOrden,
 
@@ -301,10 +307,10 @@ if (!body.items || body.items.length === 0) {
 await this.auditService.createLog({
 
   id_empresa:
-    user.empresa,
+    user.id_empresa,
 
   id_usuario:
-    user.sub,
+    user.id_usuario,
 
   tabla_afectada:
     'ordenes_compra',
@@ -318,7 +324,7 @@ await this.auditService.createLog({
 });
     return this.findOne(
       orden.id_orden_compra.toString(),
-      user.empresa,
+      user.id_empresa,
     );
 
   }
@@ -433,63 +439,84 @@ await this.auditService.createLog({
 
     ) {
 
-const detalles =
-  await this.prisma.detalle_orden_compra.findMany({
-    where: {
-      id_orden_compra: orden.id_orden_compra,
-    },
-  });
-    
-    //  return this.findOne(id, id_empresa);  
-      await this.prisma.$transaction(
+        const detalles =
+          await this.prisma.detalle_orden_compra.findMany({
+            where: {
+              id_orden_compra: orden.id_orden_compra,
+            },
+          });
+            
+        //  return this.findOne(id, id_empresa);  
+          await this.prisma.$transaction(
 
-        async (tx) => {
+            async (tx) => {
 
-for (const item of detalles) {
+            for (const item of detalles) {
 
-  const articulo = await tx.articulos.findFirst({
-    where: {
-      id_articulo: item.id_articulo,
-      id_empresa: BigInt(id_empresa),
-      deleted_at: null,
-    },
-  });
+              const articulo = await tx.articulos.findFirst({
+                where: {
+                  id_articulo: item.id_articulo,
+                  id_empresa: BigInt(id_empresa),
+                  deleted_at: null,
+                },
+              });
 
-  if (!articulo) {
-    throw new NotFoundException(
-      `Artículo ${item.descripcion_articulo} no encontrado`,
-    );
-  }
+              if (!articulo) {
+                throw new NotFoundException(
+                  `Artículo ${item.descripcion_articulo} no encontrado`,
+                );
+              }
 
-  if (Number(articulo.stock_actual) < Number(item.cantidad)) {
-    throw new BadRequestException(
-      `Stock insuficiente para ${item.descripcion_articulo}`,
-    );
-  }
+              if (Number(articulo.stock_actual) < Number(item.cantidad)) {
+                throw new BadRequestException(
+                  `Stock insuficiente para ${item.descripcion_articulo}`,
+                );
+              }
 
-  const nuevoStock =
-    Number(articulo.stock_actual) - Number(item.cantidad);
+              const nuevoStock =
+                Number(articulo.stock_actual) - Number(item.cantidad);
 
-  await tx.articulos.update({
-    where: {
-      id_articulo: articulo.id_articulo,
-    },
-    data: {
-      stock_actual: nuevoStock,
-    },
-  });
+              await tx.articulos.update({
+                where: {
+                  id_articulo: articulo.id_articulo,
+                },
+                data: {
+                  stock_actual: nuevoStock,
+                },
+              });
 
-  await tx.stock_movimientos.create({
-    data: {
-      id_empresa: BigInt(id_empresa),
-      id_articulo: articulo.id_articulo,
-      tipo_movimiento: 'SALIDA',
-      cantidad: item.cantidad,
-      referencia: orden.numero_orden,
-    },
-  });
+              await tx.stock_movimientos.create({
+                data: {
+                  id_empresa: BigInt(id_empresa),
+                  id_articulo: articulo.id_articulo,
+                  tipo_movimiento: 'SALIDA',
+                  cantidad: item.cantidad,
+                  referencia: orden.numero_orden,
+                },
+              });
+              //   await tx.cliente_movimientos.create({
 
-}
+              //     data: {
+
+              //       id_empresa:
+              //         orden.id_empresa,
+
+              //       id_cliente:
+              //         orden.id_cliente,
+
+              //       tipo_movimiento:
+              //         CLIENT_MOVEMENT_TYPES.VENTA,
+
+              //       monto:
+              //         orden.total,
+
+              //       observacion:
+              //         `Orden ${orden.numero_orden}`,
+
+              //     },
+
+              //   });
+              // }
 
           /*
           ACTUALIZAR ORDEN
@@ -509,12 +536,36 @@ for (const item of detalles) {
               estado:
                 data.estado,
 
-              observaciones:
+                observaciones:
                 data.observaciones,
 
             },
 
           });
+          if (
+            data.estado === 'APROBADA' &&
+            orden.estado !== 'APROBADA'
+            ) {
+              console.log("CREANDO MOVIMIENTO VENTA");
+
+
+              const mov = await tx.cliente_movimientos.create({
+              data: {
+                id_empresa: orden.id_empresa,
+                id_cliente: orden.id_cliente,
+                tipo_movimiento: CLIENT_MOVEMENT_TYPES.VENTA,
+                monto: orden.total,
+                observacion: `Orden ${orden.numero_orden}`,
+              },
+            });
+
+            console.log(
+              "MOVIMIENTO CREADO:",
+              mov.id_movimiento_cliente,
+              mov.created_at,
+            );
+
+          }
           const cliente = await tx.clientes.findUnique({
             where: {
               id_cliente: orden.id_cliente,
@@ -523,28 +574,28 @@ for (const item of detalles) {
 
           if (!cliente?.es_consumidor_final) {
 
-            await tx.cliente_movimientos.create({
+            // await tx.cliente_movimientos.create({
 
-              data: {
+            //   data: {
 
-                id_empresa: orden.id_empresa,
+            //     id_empresa: orden.id_empresa,
 
-                id_cliente: orden.id_cliente,
+            //     id_cliente: orden.id_cliente,
 
-                tipo_movimiento: 'VENTA',
+            //     tipo_movimiento: 'VENTA',
 
-                monto: orden.total,
+            //     monto: orden.total,
 
-                observacion: `Orden ${orden.numero_orden}`,
+            //     observacion: `Orden ${orden.numero_orden}`,
 
-              },
+            //   },
 
-            });
+            // });
 
           }
-        },
+          }
 
-      );
+    })
 
       return this.findOne(
         id,
@@ -555,7 +606,7 @@ for (const item of detalles) {
     if (
       orden.estado === 'APROBADA' &&
       data.estado === 'ANULADA'
-     ) {
+    ) {
         if (!orden) {
           throw new NotFoundException('Orden no encontrada');
         }
@@ -636,19 +687,19 @@ for (const item of detalles) {
               });
 
             }
-      await tx.cliente_movimientos.create({
-        data: {
-          id_empresa: BigInt(id_empresa),
-          id_cliente: orden.id_cliente,
+      // await tx.cliente_movimientos.create({
+      //   data: {
+      //     id_empresa: BigInt(id_empresa),
+      //     id_cliente: orden.id_cliente,
 
-          tipo_movimiento: 'NOTA_CREDITO',
+      //     tipo_movimiento: 'NOTA_CREDITO',
 
-          monto: orden.total,
+      //     monto: orden.total,
 
-          observacion:
-            `Cancelación ${orden.numero_orden}`,
-        },
-      });
+      //     observacion:
+      //       `Cancelación ${orden.numero_orden}`,
+      //   },
+      // });
             /*
             ACTUALIZAR ORDEN
             */

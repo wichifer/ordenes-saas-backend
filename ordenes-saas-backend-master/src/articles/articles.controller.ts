@@ -23,7 +23,7 @@ export class ArticlesController {
   findAll(@Req() request: any) {
 
     return this.articlesService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

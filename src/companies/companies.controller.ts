@@ -20,7 +20,7 @@ findAll(@Req() request: any) {
   console.log(request.user);
 
 return this.companiesService.findAll(
-  request.user.empresa,
+  request.user.id_empresa,
 );
 }
 

@@ -29,7 +29,7 @@ export class OrdersController {
   findAll(@Req() request: any) {
 
     return this.ordersService.findAll(
-      request.user.empresa,
+      request.user.is_empresa,
     );
 
   }
@@ -41,7 +41,7 @@ export class OrdersController {
 
   return this.ordersService.findOne(
     id,
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }
@@ -70,7 +70,7 @@ export class OrdersController {
 
     return this.ordersService.remove(
       id,
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -88,7 +88,7 @@ update(
   return this.ordersService.update(
     id,
     body,
-    request.user.empresa,
+    request.user.id_empresa,
   );
 
 }

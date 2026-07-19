@@ -21,8 +21,16 @@ export class PaymentsService {
 
     private prisma: PrismaService,
 
-  ) {}
+  ) {console.log(">>> PaymentsService INSTANCIADO");}
+async create(
+  data: CreatePaymentDto,
+  user: any,
+) {
 
+  throw new Error("ESTOY EN EL SERVICE NUEVO");
+
+  console.log("===== CREATE PAYMENT =====");
+}
   async findAll(id_empresa: string) {
 
     return this.prisma.pagos.findMany({
@@ -54,129 +62,30 @@ export class PaymentsService {
 
   }
 
-async create(
+async createe(
   data: CreatePaymentDto,
   user: any,
 ) {
+  console.log("===== CREATE PAYMENT =====");
+  console.log("USER:", JSON.stringify(user, null, 2));
+  console.log("DATA:", JSON.stringify(data, null, 2));
 
-const orden =
-
-  await this.prisma.ordenes_compra.findFirst({
-
-    where: {
-
-      id_orden_compra:
-        BigInt(data.id_orden_compra),
-
-      id_empresa:
-        BigInt(user.empresa),
-
-      deleted_at: null,
-
-    },
-
-  });
-
-if (!orden) {
-
-  throw new NotFoundException(
-    'Orden no encontrada',
-  );
-
-}
- 
-    /*
-      PAGOS EXISTENTES
-    */
-
-    const pagos =
-
-      await this.prisma.pagos.findMany({
-
-        where: {
-
-          id_orden_compra:
-            orden.id_orden_compra,
-
-          deleted_at: null,
-
-        },
-
-      });
-
-    /*
-      TOTAL PAGADO
-    */
-
-    const totalPagado =
-
-      pagos.reduce(
-
-        (acc, pago) =>
-
-          acc + Number(pago.monto),
-
-        0,
-
-      );
-
-    /*
-      SALDO
-    */
-
-    const saldo =
-
-      Number(orden.total) -
-      totalPagado;
-
-    /*
-      VALIDAR MONTO
-    */
-
-    if (
-
-      Number(data.monto) > saldo
-
-    ) {
-
-      throw new BadRequestException(
-
-        `El pago supera el saldo pendiente (${saldo})`,
-
-      );
-
-    }
-
-    /*
-      CREAR PAGO
-    */
-
-    return this.prisma.pagos.create({
-
-      data: {
-
-        id_empresa:
-          BigInt(user.empresa),
-
-        id_orden_compra:
-          BigInt(data.id_orden_compra),
-
-        id_cliente:
-          BigInt(data.id_cliente),
-
-        monto:
-          Number(data.monto),
-
-        metodo_pago:
-          data.metodo_pago,
-
-        observaciones:
-          data.observaciones,
-
-      },
-
-    });
-
+  if (!user) {
+    throw new Error("USER ES UNDEFINED");
   }
 
+  if (!user.id_empresa) {
+    throw new Error("FALTA user.id_empresa");
+  }
+
+  if (!data.id_orden_compra) {
+    throw new Error("FALTA data.id_orden_compra");
+  }
+
+  if (!data.id_cliente) {
+    throw new Error("FALTA data.id_cliente");
+  }
+
+  // ... resto del método
+}
 }

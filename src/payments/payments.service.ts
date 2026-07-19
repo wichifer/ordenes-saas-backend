@@ -54,7 +54,7 @@ export class PaymentsService {
 const orden = await this.prisma.ordenes_compra.findFirst({
   where: {
     id_orden_compra: BigInt(data.id_orden_compra),
-    id_empresa: BigInt(user.empresa),
+    id_empresa: BigInt(user.id_empresa),
     deleted_at: null,
   },
 });
@@ -110,44 +110,46 @@ const idCliente = orden.id_cliente;
     if (
       Number(data.monto) > saldo
     ) {
-console.log('TOTAL ORDEN:', Number(orden.total));
-console.log('TOTAL PAGADO:', totalPagado);
-console.log('SALDO:', saldo);
-console.log('MONTO RECIBIDO:', Number(data.monto));
-      throw new BadRequestException(
-        `El pago supera el saldo pendiente (${saldo})`,
-      );
+        console.log('TOTAL ORDEN:', Number(orden.total));
+        console.log('TOTAL PAGADO:', totalPagado);
+        console.log('SALDO:', saldo);
+        console.log('MONTO RECIBIDO:', Number(data.monto));
+              throw new BadRequestException(
+                `El pago supera el saldo pendiente (${saldo})`,
+              );
 
-    }
+            }
+//---------
+const pago = await this.prisma.$transaction(
+  async (tx) => {
 
-    const pago =
-      await this.prisma.pagos.create({
+    const pago = await tx.pagos.create({
 
-        data: {
+      data: {
 
-          id_empresa:
-            BigInt(user.empresa),
+        id_empresa:
+          BigInt(user.id_empresa),
 
-          id_orden_compra:
-            BigInt(data.id_orden_compra),
+        id_orden_compra:
+          BigInt(data.id_orden_compra),
 
-          id_cliente:
-            idCliente,
+        id_cliente:
+          idCliente,
 
-          monto:
-            Number(data.monto),
+        monto:
+          Number(data.monto),
 
-          metodo_pago:
-            data.metodo_pago,
+        metodo_pago:
+          data.metodo_pago,
 
-          observaciones:
-            data.observaciones,
+        observaciones:
+          data.observaciones,
 
-        },
+      },
 
-      });
+    });
 
-    await this.prisma.cliente_movimientos.create({
+    await tx.cliente_movimientos.create({
 
       data: {
 
@@ -169,20 +171,37 @@ console.log('MONTO RECIBIDO:', Number(data.monto));
       },
 
     });
-const nuevoTotalPagado =
-  totalPagado + Number(data.monto);
 
-if (nuevoTotalPagado >= Number(orden.total)) {
-  await this.prisma.ordenes_compra.update({
-    where: {
-      id_orden_compra: orden.id_orden_compra,
-    },
-    data: {
-      estado: 'PAGADA',
-    },
-  });
-}
+    const nuevoTotalPagado =
+      totalPagado + Number(data.monto);
+
+    if (nuevoTotalPagado >= Number(orden.total)) {
+
+      await tx.ordenes_compra.update({
+
+        where: {
+
+          id_orden_compra:
+            orden.id_orden_compra,
+
+        },
+
+        data: {
+
+          estado: 'PAGADA',
+
+        },
+
+      });
+
+    }
+
     return pago;
+
+  },
+);
+
+return pago;
 
   }
 async findPendingOrders(

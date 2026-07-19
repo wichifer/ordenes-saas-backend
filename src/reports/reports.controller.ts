@@ -25,7 +25,7 @@ export class ReportsController {
   ) {
 
     return this.reportsService.debtors(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }
@@ -45,7 +45,7 @@ export class ReportsController {
 
     return this.reportsService.sales(
 
-      request.user.empresa,
+      request.user.id_empresa,
 
       from,
 
@@ -70,7 +70,7 @@ salesByClient(
 
   return this.reportsService.salesByClient(
 
-    request.user.empresa,
+    request.user.id_empresa,
 
     from,
 
@@ -94,7 +94,7 @@ topProducts(
 
   return this.reportsService.topProducts(
 
-    request.user.empresa,
+    request.user.id_empresa,
 
     from,
 

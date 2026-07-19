@@ -61,7 +61,7 @@ model empresas {
   razon_social        String                @db.VarChar(150)
   nombre_comercial    String?               @db.VarChar(150)
   cuit                String?               @db.VarChar(20)
-  email               String?               @db.VarChar(150)
+  email               String?               @unique @db.VarChar(150)
   telefono            String?               @db.VarChar(50)
   direccion           String?
   estado              Boolean               @default(true)

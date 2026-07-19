@@ -77,7 +77,7 @@ async create(
 
       where: {
 
-        id_empresa: BigInt(user.empresa),
+        id_empresa: BigInt(user.id_empresa),
 
         codigo: data.codigo,
 
@@ -99,7 +99,7 @@ async create(
 
     data: {
 
-      id_empresa: BigInt(user.empresa),
+      id_empresa: BigInt(user.id_empresa),
 
       codigo: data.codigo,
 

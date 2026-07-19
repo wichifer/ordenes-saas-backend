@@ -39,7 +39,7 @@ export class StockMovementsController {
   ) {
 
     return this.stockMovementsService.findAll(
-      request.user.empresa,
+      request.user.id_empresa,
     );
 
   }

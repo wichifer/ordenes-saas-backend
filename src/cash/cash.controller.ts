@@ -25,7 +25,7 @@ export class CashController {
 
   ) {}
   
-  @Post('close')
+@Post('close')
 close(
 
   @Body() body: any,
@@ -36,7 +36,7 @@ close(
 
   return this.cashService.close(
 
-    request.user.empresa,
+    request.user.id_empresa,
 
     Number(
       body.saldo_final,
@@ -44,14 +44,15 @@ close(
 
   );
 
-}@Get('history')
+}
+@Get('history')
 history(
   @Req() request: any,
 ) {
 
   return this.cashService.history(
 
-    request.user.empresa,
+    request.user.id_empresa,
 
   );
 
@@ -68,9 +69,9 @@ history(
 
     return this.cashService.open(
 
-      request.user.empresa,
+      request.user.id_empresa,
 
-      request.user.sub,
+      request.user.id_usuario,
 
       Number(
         body.saldo_inicial,
@@ -87,7 +88,7 @@ current(
 
   return this.cashService.current(
 
-    request.user.empresa,
+    request.user.id_empresa,
 
   );
 
