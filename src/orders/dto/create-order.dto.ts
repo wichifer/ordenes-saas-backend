@@ -1,9 +1,11 @@
+//C:\dev\ordenes-saas-backend\src\orders\dto\create-order.dto.ts
 import {
   IsArray,
   IsNotEmpty,
   IsNumberString,
   IsOptional,
   IsString,
+  IsBoolean,
   ValidateNested,
 } from 'class-validator';
 
@@ -41,4 +43,8 @@ export class CreateOrderDto {
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
 
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  aprobar_automaticamente?: boolean;
 }
