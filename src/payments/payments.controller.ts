@@ -41,7 +41,10 @@ export class PaymentsController {
 findPendingOrders(
   @Req() request: any,
 ) {
-
+    console.log(
+    'USER PAYMENTS:',
+    request.user
+  );
   return this.paymentsService.findPendingOrders(
     request.user.id_empresa,
   );

@@ -1,3 +1,4 @@
+//C:\dev\ordenes-saas-backend\src\orders\orders.controller.ts
 import {
   Body,
   Controller,
@@ -59,6 +60,17 @@ export class OrdersController {
 
   }
   
+@Post(":id/approve")
+approve(
+  @Param("id") id: string,
+  @Req() request: any,
+) {
+  return this.ordersService.update(
+    id,
+    { estado: "APROBADA" },
+    request.user.id_empresa,
+  );
+}
   @Delete(':id')
   remove(
 
