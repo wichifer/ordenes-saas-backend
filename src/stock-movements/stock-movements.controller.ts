@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -16,6 +17,7 @@ from '../auth/guards/jwt.guard';
 import { CreateStockMovementDto }
 from './dto/create-stock-movement.dto';
 
+
 @UseGuards(JwtGuard)
 
 @Controller('stock-movements')
@@ -26,7 +28,16 @@ export class StockMovementsController {
     private readonly stockMovementsService:
       StockMovementsService,
   ) {}
-
+@Get("product/:idArticulo")
+findByProduct(
+  @Param("idArticulo") idArticulo: string,
+  @Req() req,
+) {
+  return this.stockMovementsService.findByProduct(
+    Number(idArticulo),
+    req.user.id_empresa,
+  );
+}
   /*
   ==================================================
   LISTAR MOVIMIENTOS
@@ -44,6 +55,24 @@ export class StockMovementsController {
 
   }
 
+  /*
+==================================================
+DETALLE MOVIMIENTO
+==================================================
+*/
+
+@Get(':id')
+findOne(
+  @Param('id') id: string,
+  @Req() request: any,
+) {
+
+  return this.stockMovementsService.findOne(
+    Number(id),
+    request.user.id_empresa,
+  );
+
+}
   /*
   ==================================================
   MOVIMIENTO MANUAL

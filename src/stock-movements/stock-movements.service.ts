@@ -20,7 +20,21 @@ export class StockMovementsService {
     private prisma: PrismaService,
     private auditService: AuditService,
   ) {}
-
+async findByProduct(idArticulo: number, id_empresa: string,) {
+  return this.prisma.stock_movimientos.findMany({
+    where: {
+      id_articulo: idArticulo,
+      id_empresa:BigInt(id_empresa),
+    },
+    include: {
+      articulos: true,
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+    take: 10,
+  });
+}
   /*
   ==================================================
   LISTAR MOVIMIENTOS
@@ -54,6 +68,51 @@ export class StockMovementsService {
   }
 
   /*
+==================================================
+DETALLE MOVIMIENTO
+==================================================
+*/
+
+async findOne(
+  id_movimiento_stock: number,
+  id_empresa: string,
+) {
+
+  const movement =
+    await this.prisma.stock_movimientos.findFirst({
+
+      where: {
+
+        id_movimiento_stock:
+          BigInt(id_movimiento_stock),
+
+        id_empresa:
+          BigInt(id_empresa),
+
+      },
+
+      include: {
+
+        articulos: true,
+
+      },
+
+    });
+
+
+  if (!movement) {
+
+    throw new NotFoundException(
+      'Movimiento no encontrado',
+    );
+
+  }
+
+
+  return movement;
+
+}
+  /*
   ==================================================
   MOVIMIENTO MANUAL
   ==================================================
@@ -67,7 +126,8 @@ export class StockMovementsService {
     /*
     BUSCAR ARTICULO
     */
-
+console.log("DATA:", data);
+console.log("USER:", user);
     const articulo =
       await this.prisma.articulos.findFirst({
 
@@ -77,7 +137,7 @@ export class StockMovementsService {
             BigInt(data.id_articulo),
 
           id_empresa:
-            BigInt(user.empresa),
+            BigInt(user.id_empresa),
 
           deleted_at: null,
 
@@ -168,13 +228,13 @@ export class StockMovementsService {
         /*
         CREAR MOVIMIENTO
         */
-
+console.log(JSON.stringify(user, null, 2));
         await tx.stock_movimientos.create({
 
           data: {
 
             id_empresa:
-              BigInt(user.empresa),
+              BigInt(user.id_empresa),
 
             id_articulo:
               articulo.id_articulo,
